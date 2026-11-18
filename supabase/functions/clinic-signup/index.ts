@@ -5,11 +5,12 @@
 // Secretos (Edge Functions → Secrets):
 //   RESEND_API_KEY  obligatorio para enviar el correo (https://resend.com)
 //   APP_URL         URL pública de la app, p. ej. https://mcvd.vercel.app
-//   ADMIN_EMAIL     opcional, por defecto lemare.alejandro@gmail.com
+//   ADMIN_EMAIL     opcional, por defecto lemarealejandro@gmail.com
 //   RESEND_FROM     opcional, remitente con dominio verificado en Resend
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
-const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') ?? 'lemare.alejandro@gmail.com';
+// Debe coincidir exactamente con el correo de la cuenta de Resend (sin dominio propio, Resend solo envía a ese correo).
+const ADMIN_EMAIL = Deno.env.get('ADMIN_EMAIL') ?? 'lemarealejandro@gmail.com';
 const RESEND_FROM = Deno.env.get('RESEND_FROM') ?? 'ClinicPlus <onboarding@resend.dev>';
 
 const cors = {

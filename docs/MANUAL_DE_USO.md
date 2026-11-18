@@ -300,7 +300,7 @@ Supabase guarda copias automáticas según el plan contratado (**Database → Ba
 
 ### 13.7 Aprobar clínicas nuevas
 
-Una clínica nueva puede pedir acceso sola desde **Solicita acceso** en la pantalla de inicio de sesión. Te llega un correo a lemare.alejandro@gmail.com con el asunto **"Solicitud de alta: …"**.
+Una clínica nueva puede pedir acceso sola desde **Solicita acceso** en la pantalla de inicio de sesión. Te llega un correo a lemarealejandro@gmail.com con el asunto **"Solicitud de alta: …"**.
 
 1. Pulsa **Revisar solicitud** en el correo.
 2. Revisa los datos (clínica, responsable, correo y teléfono).
