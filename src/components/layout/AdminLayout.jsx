@@ -17,8 +17,8 @@ const AdminLayout = () => {
   const [inventory, setInventory] = usePersistentState('clinicplus_inventory', setup ? [] : initialInventory);
   const [estudios, setEstudios] = usePersistentState('clinicplus_estudios', setup ? [] : initialEstudios);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/login');
   };
 

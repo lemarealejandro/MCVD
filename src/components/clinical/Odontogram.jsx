@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Eraser, Info, ChevronDown, ChevronUp, Stethoscope, Printer, Eye, EyeOff, Trash2, X, ArrowLeft } from 'lucide-react';
-import { getSessionRole } from '../../utils/auth';
+import { getUserEmail } from '../../utils/auth';
 
 /* ── Condition palette (condiciones por superficie) ─ */
 const CONDITIONS = [
@@ -297,12 +297,8 @@ function formatDate(iso) {
   return isNaN(d) ? '—' : d.toLocaleDateString('es-VE', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-const creadorLabel = () => {
-  const role = getSessionRole();
-  if (role === 'admin') return 'Administrador';
-  if (role === 'setup') return 'Primer uso';
-  return '—';
-};
+// Quién registra el hallazgo: el correo del usuario con sesión iniciada.
+const creadorLabel = () => getUserEmail() || '—';
 
 // Aplica o quita un ítem del catálogo a una pieza y devuelve el nuevo registro.
 function nextForTooth(cur, id) {

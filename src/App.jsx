@@ -23,6 +23,8 @@ const InformesDashboard = lazy(() => import('./pages/Informes/InformesDashboard'
 const ConstructorInformeMejorado = lazy(() => import('./pages/Informes/ConstructorInformeMejorado'))
 const Plantillas = lazy(() => import('./pages/Imagenologia/Plantillas'))
 const PatientSelfForm = lazy(() => import('./pages/PatientSelfForm'))
+const Registro = lazy(() => import('./pages/Registro'))
+const AprobarClinica = lazy(() => import('./pages/AprobarClinica'))
 
 const RequireAuth = ({ children }) => {
   const location = useLocation()
@@ -36,6 +38,8 @@ function App() {
     <Routes>
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<Registro />} />
+      <Route path="/aprobar-clinica" element={<AprobarClinica />} />
       
       <Route path="/admin" element={<RequireAuth><AdminLayout /></RequireAuth>}>
         <Route index element={<Dashboard />} />

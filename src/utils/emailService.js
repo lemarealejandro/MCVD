@@ -1,3 +1,4 @@
+import { getClinicId } from './auth';
 // emailService.js
 // Uses EmailJS - configure with your own Service ID, Template IDs and Public Key
 // Sign up at https://www.emailjs.com (free plan: 200 emails/month)
@@ -76,7 +77,7 @@ export async function sendAppointmentReminder({ patientName, patientEmail, date,
 export async function sendPatientFormLink({ patientName, patientEmail, patientId, clinicName = 'Clínica MCVD' }) {
   try {
     const emailjs = await loadEmailJS();
-    const formUrl = `${window.location.origin}/paciente/ficha/${patientId}`;
+    const formUrl = `${window.location.origin}/paciente/ficha/${patientId}?c=${getClinicId()}`;
     const params = {
       to_name: patientName,
       to_email: patientEmail,

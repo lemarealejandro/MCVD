@@ -4,8 +4,10 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
+import { initAuth } from './utils/auth'
 
-createRoot(document.getElementById('root')).render(
+// Recupera la sesión de Supabase antes de mostrar la app.
+initAuth().finally(() => createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <LanguageProvider>
@@ -13,4 +15,4 @@ createRoot(document.getElementById('root')).render(
       </LanguageProvider>
     </BrowserRouter>
   </StrictMode>,
-)
+))
