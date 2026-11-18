@@ -330,6 +330,17 @@ El panel **no muestra pacientes ni datos clínicos** de las clínicas. Al aproba
 
 Si además perteneces a una clínica, entras a tu clínica y verás **Administración** al final del menú lateral.
 
+### 13.9 Ambiente de pruebas
+
+Existe una copia del sistema para probar cambios **sin tocar los datos reales**:
+
+- **Producción** (la que usa la clínica): https://mcvd.vercel.app
+- **Pruebas:** la dirección de la rama `staging` en Vercel (*Deployments* → el que dice **staging**).
+
+Las dos tienen usuarios, clínicas y datos **separados**: una cuenta creada en pruebas no sirve en producción y viceversa. En pruebas puedes registrar clínicas, aprobar solicitudes y cargar pacientes ficticios sin riesgo. **No cargues datos de pacientes reales en pruebas.**
+
+Los cambios nuevos se publican primero en pruebas y, cuando están revisados, pasan a producción. El detalle técnico está en la documentación técnica, §11.5.
+
 ---
 
 ## 14. Preguntas frecuentes y problemas

@@ -30,6 +30,15 @@ Abre `http://localhost:5173` y entra con un usuario de Supabase asignado a una c
 
 Otros comandos: `npm run lint`, `npm run build`, `npm run preview`.
 
+## Ambientes
+
+| | Rama | App | Supabase |
+|---|---|---|---|
+| Producción | `main` | https://mcvd.vercel.app | CliniPlus Project |
+| Pruebas | `staging` | Preview de Vercel de `staging` | CliniPlus Pruebas |
+
+Flujo: cambios a `staging` → probar → pull request `staging` → `main`. Detalle en la [documentación técnica, §11.5](docs/DOCUMENTACION_TECNICA.md).
+
 ## Variables de entorno
 
 Obligatorias: `VITE_SUPABASE_URL` y `VITE_SUPABASE_PUBLISHABLE_KEY` (ya incluidas en `.env.example`). Opcionales: las de EmailJS para enviar correos. Detalle en la [documentación técnica, §10](docs/DOCUMENTACION_TECNICA.md#10-configuración-y-variables-de-entorno).
