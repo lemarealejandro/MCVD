@@ -3,11 +3,15 @@ import { Plus, Trash2, FileText, Search, ChevronDown, ChevronRight, DollarSign, 
 import { DENTAL_TREATMENTS } from '../../data/treatmentCatalog';
 import BudgetWithPDF from './BudgetWithPDF';
 import { localDateStr } from '../../utils/date';
+import { elegirProcedimiento, quitarDelPlan } from '../../utils/planTratamiento';
 
 const newId = () => Date.now();
 
-const TreatmentsTab = ({ patient, patients, patientId, setPatients }) => {
-  const [activeSection, setActiveSection] = useState('history'); // 'history' | 'budget'
+// Catálogo aplanado para elegir el procedimiento de cada diente del plan.
+const PROCEDIMIENTOS = DENTAL_TREATMENTS.flatMap(cat => cat.items.map(item => ({ ...item, categoria: cat.category })));
+
+const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInicial = 'history' }) => {
+  const [activeSection, setActiveSection] = useState(seccionInicial); // 'history' | 'catalog' | 'plan' | 'budget'
   const [openCategories, setOpenCategories] = useState({});
   const [search, setSearch] = useState('');
   const [budgetItems, setBudgetItems] = useState([]);
@@ -17,6 +21,22 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients }) => {
   const [lastAdded, setLastAdded] = useState('');
 
   const toggleCategory = (cat) => setOpenCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+
+  // --- Plan de tratamiento (dientes enviados desde el odontograma) ---
+  const planItems = patient.planTratamientos || [];
+  const planPendiente = planItems.filter(p => p.status === 'pendiente');
+  const actualizarPlan = (siguiente) => setPatients({ ...patients, [patientId]: { ...patient, planTratamientos: siguiente } });
+  const idEnPresupuesto = (item) => `${item.procedureId}-${item.tooth}`;
+  const agregarPlanAPresupuesto = (item) => {
+    const proc = PROCEDIMIENTOS.find(p => p.id === item.procedureId);
+    if (!proc) return;
+    addToBudget({
+      id: idEnPresupuesto(item),
+      name: `${proc.name} · Diente ${item.tooth}`,
+      unit: proc.unit,
+      priceUSD: proc.priceUSD,
+    });
+  };
 
   const filteredCatalog = DENTAL_TREATMENTS.map(cat => ({
     ...cat,
@@ -65,6 +85,10 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients }) => {
       <div className="section-tabs">
         <button className={`section-tab ${activeSection === 'history' ? 'active' : ''}`} onClick={() => setActiveSection('history')}>
           <FileText size={16} /> Historial de Tratamientos
+        </button>
+        <button className={`section-tab ${activeSection === 'plan' ? 'active' : ''}`} onClick={() => setActiveSection('plan')}>
+          <ArrowRight size={16} /> Plan de Tratamiento
+          {planPendiente.length > 0 && <span className="budget-badge">{planPendiente.length}</span>}
         </button>
         <button className={`section-tab ${activeSection === 'catalog' ? 'active' : ''}`} onClick={() => setActiveSection('catalog')}>
           <Search size={16} /> Catálogo de Procedimientos
@@ -202,6 +226,68 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients }) => {
         </div>
       )}
 
+      {/* PLAN SECTION */}
+      {activeSection === 'plan' && (
+        <div className="info-card">
+          <div className="card-header">
+            <h3>Plan de Tratamiento (pendientes)</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '0.25rem' }}>
+              Dientes enviados desde el odontograma. Elija el procedimiento y agréguelo al presupuesto.
+            </p>
+          </div>
+          <div className="card-body plan-list">
+            {planPendiente.length === 0 ? (
+              <p className="plan-empty">No hay dientes en el plan. Envíelos desde el registro de hallazgos del odontograma.</p>
+            ) : planPendiente.map(item => {
+              const proc = PROCEDIMIENTOS.find(p => p.id === item.procedureId);
+              const enPresupuesto = budgetItems.some(b => b.id === idEnPresupuesto(item));
+              return (
+                <div key={item.id} className="plan-item">
+                  <div className="plan-item-head">
+                    <div>
+                      <strong>Diente {item.tooth}</strong>
+                      <span className="plan-item-name"> · {item.toothName}</span>
+                    </div>
+                    <span className="plan-item-meta">
+                      {item.fecha ? new Date(item.fecha).toLocaleDateString('es-VE') : '—'} · {item.creador || '—'}
+                    </span>
+                  </div>
+                  {item.caras && item.caras !== '—' && <div className="plan-item-caras">{item.caras}</div>}
+                  {item.estado?.length > 0 && (
+                    <div className="plan-item-estado">
+                      {item.estado.map(e => <span key={e} className="plan-chip">{e}</span>)}
+                    </div>
+                  )}
+                  <div className="plan-item-actions">
+                    <select
+                      className="form-input plan-select"
+                      value={item.procedureId || ''}
+                      onChange={e => actualizarPlan(elegirProcedimiento(planItems, item.id, e.target.value))}
+                      aria-label={`Procedimiento para el diente ${item.tooth}`}
+                    >
+                      <option value="">Seleccione procedimiento…</option>
+                      {PROCEDIMIENTOS.map(p => (
+                        <option key={p.id} value={p.id}>{p.name} — ${p.priceUSD}</option>
+                      ))}
+                    </select>
+                    {enPresupuesto ? (
+                      <span className="plan-done"><Check size={14} /> En presupuesto</span>
+                    ) : (
+                      <button className="btn btn-primary btn-sm" disabled={!proc} onClick={() => agregarPlanAPresupuesto(item)}>
+                        <DollarSign size={14} /> Agregar al presupuesto
+                      </button>
+                    )}
+                    <button className="btn btn-outline btn-sm" onClick={() => actualizarPlan(quitarDelPlan(planItems, item.id))}>
+                      <Trash2 size={14} /> Quitar
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* BUDGET SECTION */}
       {activeSection === 'budget' && (
         <div className="budget-layout">
@@ -228,6 +314,19 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients }) => {
 
       <style>{`
         .treatments-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+        .plan-list { display: flex; flex-direction: column; gap: 0.75rem; }
+        .plan-empty { color: var(--text-secondary); text-align: center; padding: 1.5rem 0; }
+        .plan-item { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-primary); }
+        .plan-item-head { display: flex; justify-content: space-between; align-items: baseline; gap: 0.75rem; flex-wrap: wrap; }
+        .plan-item-name { color: var(--text-secondary); }
+        .plan-item-meta { font-size: 0.78rem; color: var(--text-tertiary); }
+        .plan-item-caras { font-size: 0.85rem; color: var(--text-primary); }
+        .plan-item-estado { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+        .plan-chip { font-size: 0.75rem; font-weight: 600; padding: 0.15rem 0.55rem; border-radius: 999px; background: #eff6ff; color: #1d4ed8; }
+        .plan-item-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+        .plan-select { min-width: 260px; flex: 1; }
+        .plan-done { display: inline-flex; align-items: center; gap: 0.3rem; color: #166534; font-weight: 600; font-size: 0.875rem; }
+        @media (max-width: 768px) { .plan-select { min-width: 0; width: 100%; } }
 
         .section-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .section-tab {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Eraser, Info, ChevronDown, ChevronUp, Stethoscope, Printer, Eye, EyeOff, Trash2, X, ArrowLeft } from 'lucide-react';
+import { Eraser, Info, ChevronDown, ChevronUp, Stethoscope, Printer, Eye, EyeOff, Trash2, X, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { getSessionRole } from '../../utils/auth';
 
 /* ── Condition palette (condiciones por superficie) ─ */
@@ -373,7 +373,20 @@ function ItemChip({ item }) {
 }
 
 /* ── Registro de hallazgos (tabla) ───────────────── */
-function FindingsTable({ rows, onAnular, title }) {
+// Info de un diente lista para el plan de tratamiento.
+const aPlanItem = (r) => ({
+  tooth: r.num,
+  toothName: toothName(r.num),
+  caras: r.caras,
+  estado: [
+    ...r.conditions.map(c => CONDITION_BY_ID[c]?.label ?? c),
+    ...r.items.map(it => it.label),
+  ],
+  fecha: r.fecha || null,
+  creador: r.creador || '—',
+});
+
+function FindingsTable({ rows, onAnular, title, onEnviarAPlan, enviados = [], onVerPlan }) {
   const th = { textAlign: 'left', padding: '10px 12px', fontSize: '0.75rem', fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: '0.04em', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' };
   const td = { padding: '10px 12px', fontSize: '0.875rem', color: '#1f2937', borderBottom: '1px solid #f1f5f9', verticalAlign: 'top' };
 
@@ -382,6 +395,14 @@ function FindingsTable({ rows, onAnular, title }) {
       <h4 style={{ fontSize:'0.9rem', fontWeight:600, color:'#1f2937', marginBottom:8 }}>
         Registro de hallazgos{title && <span style={{ fontWeight:400, color:'#6b7280' }}> · {title}</span>}
       </h4>
+      {enviados.length > 0 && onVerPlan && (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, flexWrap:'wrap', marginBottom:8, padding:'8px 12px', borderRadius:8, background:'#f0fdf4', border:'1px solid #bbf7d0', fontSize:'0.8rem', color:'#166534' }}>
+          <span><Check size={13} style={{ verticalAlign:'-2px' }}/> En plan de tratamiento: diente{enviados.length > 1 ? 's' : ''} {enviados.join(', ')}</span>
+          <button onClick={onVerPlan} style={{ background:'none', border:'none', color:'#166534', fontWeight:600, cursor:'pointer', fontFamily:'inherit', fontSize:'0.8rem', display:'flex', alignItems:'center', gap:4 }}>
+            Ver plan de tratamiento <ArrowRight size={13}/>
+          </button>
+        </div>
+      )}
       {rows.length === 0 ? (
         <div style={{ textAlign:'center', padding:'1.5rem', color:'#9ca3af', fontSize:'0.875rem', border:'1px dashed #e5e7eb', borderRadius:10 }}>
           Sin hallazgos registrados. Elija una condición y haga clic en las caras de un diente, o use Diagnóstico.
@@ -396,6 +417,7 @@ function FindingsTable({ rows, onAnular, title }) {
                 <th style={th}>Caras</th>
                 <th style={th}>Estado</th>
                 <th style={th}>Creador</th>
+                {onEnviarAPlan && <th style={th}>Tratamiento</th>}
                 <th style={th}>Anular</th>
               </tr>
             </thead>
@@ -419,6 +441,15 @@ function FindingsTable({ rows, onAnular, title }) {
                     {r.items.map(it => <span key={it.id} style={{ display:'inline-block', margin:'0 4px 4px 0' }}><ItemChip item={it}/></span>)}
                   </td>
                   <td style={{ ...td, color:'#6b7280', whiteSpace:'nowrap' }}>{r.creador}</td>
+                  {onEnviarAPlan && (
+                    <td style={td}>
+                      <button onClick={() => onEnviarAPlan(aPlanItem(r))}
+                        title="Enviar este diente al plan de tratamiento"
+                        style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 9px', borderRadius:8, border:'1px solid #bfdbfe', background:'#eff6ff', color:'#1d4ed8', fontFamily:'inherit', fontSize:'0.78rem', fontWeight:600, cursor:'pointer', whiteSpace:'nowrap' }}>
+                        <ArrowRight size={13}/> {enviados.includes(r.num) ? 'Actualizar' : 'Enviar a tratamientos'}
+                      </button>
+                    </td>
+                  )}
                   <td style={td}>
                     <button onClick={() => onAnular(r.num)} title="Anular registro" aria-label={`Anular diente ${r.num}`}
                       style={{ background:'none', border:'none', color:'#b91c1c', cursor:'pointer', padding:4 }}>
@@ -544,7 +575,7 @@ function DiagnosisModal({ menu, data, onClose, onView, onApply, onAnular }) {
 }
 
 /* ── Main Odontogram component ───────────────────── */
-const Odontogram = ({ data = {}, onChange }) => {
+const Odontogram = ({ data = {}, onChange, onEnviarAPlan, onVerPlan, planDientes = [] }) => {
   const [dent, setDent] = useState('permanente');
   const [selectedCondition, setSelectedCondition] = useState('caries');
   const [region, setRegion] = useState(null);
@@ -790,7 +821,14 @@ const Odontogram = ({ data = {}, onChange }) => {
       </div>
 
       {/* Registro */}
-      <FindingsTable rows={rows} onAnular={handleAnular} title={regionTitle}/>
+      <FindingsTable
+        rows={rows}
+        onAnular={handleAnular}
+        title={regionTitle}
+        onEnviarAPlan={onEnviarAPlan}
+        enviados={planDientes}
+        onVerPlan={onVerPlan}
+      />
 
       {/* Modal de opciones de diagnóstico */}
       {menu && (

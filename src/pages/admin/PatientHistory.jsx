@@ -7,6 +7,8 @@ import ClinicalHistoryEditor from '../../components/clinical/ClinicalHistoryEdit
 import Periodontodiagrama from '../../components/clinical/Periodontodiagrama';
 import SignatureCanvas from '../../components/clinical/SignatureCanvas';
 import { sendPatientFormLink } from '../../utils/emailService';
+import { nuevoIdPaciente } from '../../utils/pacienteDesdeCita';
+import { enviarAPlan, dientesPendientes } from '../../utils/planTratamiento';
 
 const PatientHistory = () => {
   const { id } = useParams();
@@ -15,6 +17,7 @@ const PatientHistory = () => {
 
   const patient = patients[id];
   const [activeTab, setActiveTab] = useState('ficha');
+  const [treatmentsSection, setTreatmentsSection] = useState('history');
   const [emailSent, setEmailSent] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailError, setEmailError] = useState('');
@@ -30,6 +33,11 @@ const PatientHistory = () => {
 
   const handleOdontogramChange = (newData) => {
     setPatients({ ...patients, [id]: { ...patient, odontogramData: newData } });
+  };
+
+  const handleEnviarAPlan = (item) => {
+    const siguiente = enviarAPlan(patient.planTratamientos || [], item, nuevoIdPaciente());
+    setPatients({ ...patients, [id]: { ...patient, planTratamientos: siguiente } });
   };
 
   const handleConsentSig = (dataUrl, date) => {
@@ -98,7 +106,7 @@ const PatientHistory = () => {
           <button
             key={key}
             className={`tab-btn ${activeTab === key ? 'active' : ''}`}
-            onClick={() => setActiveTab(key)}
+            onClick={() => { if (key === 'treatments') setTreatmentsSection('history'); setActiveTab(key); }}
           >
             <Icon size={16} />
             <span className="tab-label">{label}</span>
@@ -120,7 +128,13 @@ const PatientHistory = () => {
         <div className="info-card">
           <div className="card-header"><h3>Odontograma Interactivo</h3></div>
           <div className="card-body">
-            <Odontogram data={patient.odontogramData || {}} onChange={handleOdontogramChange} />
+            <Odontogram
+              data={patient.odontogramData || {}}
+              onChange={handleOdontogramChange}
+              onEnviarAPlan={handleEnviarAPlan}
+              planDientes={dientesPendientes(patient.planTratamientos || [])}
+              onVerPlan={() => { setTreatmentsSection('plan'); setActiveTab('treatments'); }}
+            />
           </div>
         </div>
       )}
@@ -150,6 +164,7 @@ const PatientHistory = () => {
           patients={patients}
           patientId={id}
           setPatients={setPatients}
+          seccionInicial={treatmentsSection}
         />
       )}
 
