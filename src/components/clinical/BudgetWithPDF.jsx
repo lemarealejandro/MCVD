@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { X, FileDown, CheckCircle, PenTool, DollarSign, Trash2, Plus } from 'lucide-react';
 import SignatureCanvas from './SignatureCanvas';
 
-const BudgetWithPDF = ({ patient, budgetItems, setBudgetItems, exchangeRate, setExchangeRate, onAddMore }) => {
+const BudgetWithPDF = ({ patient, budgetItems, setBudgetItems, exchangeRate, setExchangeRate, onAddMore, vigencia, vencido = false }) => {
   const [activeView, setActiveView] = useState('budget'); // 'budget' | 'sign'
   const [patientSig, setPatientSig] = useState(patient.firmaPresupuesto || null);
   const [sigDate, setSigDate] = useState(patient.firmaPresupuestoFecha || null);
@@ -79,7 +79,7 @@ const BudgetWithPDF = ({ patient, budgetItems, setBudgetItems, exchangeRate, set
             <span>Tasa USD/VES:</span>
             <input type="number" value={exchangeRate} onChange={e => setExchangeRate(+e.target.value)} className="bdg-rate-input" />
           </div>
-          <button className="bdg-btn bdg-btn-pdf" onClick={handlePDF} disabled={generatingPDF || budgetItems.length === 0 || activeView !== 'budget'}>
+          <button className="bdg-btn bdg-btn-pdf" onClick={handlePDF} disabled={generatingPDF || budgetItems.length === 0 || activeView !== 'budget' || vencido}>
             <FileDown size={15} /> {generatingPDF ? 'Generando...' : 'Descargar PDF'}
           </button>
         </div>
@@ -116,6 +116,7 @@ const BudgetWithPDF = ({ patient, budgetItems, setBudgetItems, exchangeRate, set
               <p><strong>Paciente:</strong> {patient.name}</p>
               <p><strong>Cédula:</strong> {patient.rut}</p>
               <p><strong>Fecha:</strong> {new Date().toLocaleDateString('es-VE', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+              {vigencia && <p><strong>{vigencia}</strong></p>}
             </div>
           </div>
 
