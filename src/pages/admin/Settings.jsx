@@ -123,7 +123,7 @@ const Settings = () => {
             <h3>Seguridad</h3>
           </div>
           <div className="settings-form">
-            <p className="text-secondary">La contraseña se configura en la variable VITE_ADMIN_PASSWORD_HASH del despliegue.</p>
+            <p className="text-secondary">Los usuarios y contraseñas se gestionan en Supabase (Authentication → Users). Para cambiar tu contraseña, pide al administrador que te envíe un correo de restablecimiento.</p>
           </div>
         </div>
 

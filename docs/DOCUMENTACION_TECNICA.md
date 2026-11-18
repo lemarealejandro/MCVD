@@ -1,18 +1,41 @@
 # ClinicPlus / MCVD — Documentación técnica
 
-Fecha de corte: 2026-11-16. Documenta el estado real del código en `src/` a esa fecha, y al final, qué falta para vender el sistema a varias clínicas, cada una con su propio acceso y datos aislados.
+**Actualizada:** 2026-11-18. Describe el código de la rama `claude/compassionate-hamilton-iuz1kp` y la base de datos de Supabase del proyecto **CliniPlus Project** (`elsgbeupmvsqwkdiineb`).
 
-Escrito para: desarrollo y para quien evalúe la viabilidad técnica del producto.
+**Para quién:** desarrollo, mantenimiento y evaluación técnica. El manual para quienes usan la app está en [`MANUAL_DE_USO.md`](./MANUAL_DE_USO.md).
+
+**Qué cambió desde la versión del 2026-11-16:** los datos dejaron de vivir solo en el navegador. Ahora se guardan en Supabase (PostgreSQL), el inicio de sesión usa Supabase Auth y el acceso a los datos está protegido por reglas RLS en la base. El formulario público del paciente ahora llega a la clínica.
 
 ---
 
-## 1. Resumen ejecutivo
+## Índice
 
-- Es una **aplicación web de una sola página (SPA)** en React 19 + Vite 8, desplegable como sitio estático (configuración de Vercel con reescritura a `index.html`).
-- **No tiene backend.** Todos los datos viven en el `localStorage` del navegador. No hay base de datos, ni API propia, ni sincronización entre dispositivos.
-- **No tiene multi-tenant.** Existe un único acceso de administrador (variables de entorno) y una cuenta secundaria de "primer uso". Ambas comparten el mismo origen del navegador.
-- La autenticación es **solo del lado del cliente**: el hash SHA-256 de la contraseña se compara en el navegador. El propio código lo advierte en `src/utils/auth.js`: no es seguridad real.
-- Por lo tanto, **hoy no puede venderse a clínicas distintas con datos separados y login propio**. Es un prototipo funcional de un solo consultorio. La sección 9 detalla lo necesario para llegar a un producto multi-clínica.
+1. [Resumen](#1-resumen)
+2. [Stack tecnológico](#2-stack-tecnológico)
+3. [Arquitectura](#3-arquitectura)
+4. [Estructura del repositorio](#4-estructura-del-repositorio)
+5. [Base de datos (Supabase)](#5-base-de-datos-supabase)
+6. [Autenticación y control de acceso](#6-autenticación-y-control-de-acceso)
+7. [Persistencia de datos en el frontend](#7-persistencia-de-datos-en-el-frontend)
+8. [Módulos y rutas](#8-módulos-y-rutas)
+9. [Integraciones externas](#9-integraciones-externas)
+10. [Configuración y variables de entorno](#10-configuración-y-variables-de-entorno)
+11. [Desarrollo local, build y despliegue](#11-desarrollo-local-build-y-despliegue)
+12. [Operación: usuarios, clínicas y migraciones](#12-operación-usuarios-clínicas-y-migraciones)
+13. [Herramientas para Claude Code](#13-herramientas-para-claude-code)
+14. [Limitaciones conocidas](#14-limitaciones-conocidas)
+15. [Próximos pasos recomendados](#15-próximos-pasos-recomendados)
+16. [Glosario](#16-glosario)
+
+---
+
+## 1. Resumen
+
+- **Aplicación web de una sola página (SPA)** en React 19 + Vite 8, desplegada como sitio estático en Vercel.
+- **Backend: Supabase** (PostgreSQL 17, región `us-west-2`). No hay servidor propio: el navegador habla directamente con la API de Supabase usando la clave publicable.
+- **Seguridad en la base:** todas las tablas tienen *Row Level Security* (RLS). Un usuario solo ve los datos de la clínica a la que pertenece. La clave publicable incluida en el bundle no da acceso a datos sin una sesión válida de un miembro.
+- **Multi-clínica (base):** el modelo de datos ya separa clínicas (`clinics`) y miembros (`clinic_members`). Hoy existen dos clínicas: **Clínica MCVD** (datos reales, arranca vacía) y **Demo MCVD** (datos de ejemplo).
+- **Formato de datos:** cada sección de la app (pacientes, agenda, inventario…) se guarda como un documento JSON por clínica en la tabla `clinic_data`. Ver [§5.3](#53-por-qué-documentos-json-y-no-tablas-por-entidad) para las ventajas y límites de esta decisión.
 
 ---
 
@@ -22,322 +45,586 @@ Escrito para: desarrollo y para quien evalúe la viabilidad técnica del product
 |---|---|---|
 | UI | React | `^19.2.4` |
 | Build | Vite | `^8.0.1` |
-| Enrutado | react-router-dom | `^7.16.0` (BrowserRouter) |
+| Enrutado | react-router-dom | `^7.16.0` (`BrowserRouter`) |
+| Backend / BD | Supabase (PostgreSQL 17) | Proyecto `elsgbeupmvsqwkdiineb` |
+| Cliente BD y Auth | `@supabase/supabase-js` | v2 |
 | Iconos | lucide-react | `^0.577.0` |
 | Animación | framer-motion | `^12.38.0` |
-| Arrastrar y soltar | @dnd-kit/core, sortable, utilities | `^6.3.1`, `^10.0.0`, `^3.2.2` |
+| Arrastrar y soltar | @dnd-kit/core, sortable, utilities | Constructor de informes |
 | Firma digital | react-signature-canvas | `^1.1.0-alpha.2` (prerelease) |
-| PDF | jspdf `^4.2.1`, html2canvas `^1.4.1`, html2pdf.js `^0.14.0` | Presupuesto: html2canvas + jsPDF. Informes: html2pdf.js |
+| PDF | jspdf + html2canvas (presupuesto), html2pdf.js (informes) | Generado en el navegador |
 | Correo | @emailjs/browser | `^5.0.3`, envío desde el navegador |
-| Estilos | Tailwind vía `@tailwindcss/postcss` (devDependency), CSS propio en `src/index.css` y estilos inline en componentes | Convivencia de ambos enfoques |
+| Estilos | CSS propio (`src/index.css`), estilos inline en componentes, Tailwind vía PostCSS | Conviven los tres enfoques |
 | Lint | ESLint 9 + react-hooks + react-refresh | `npm run lint` |
+| Hosting | Vercel | `vercel.json` reescribe todas las rutas a `index.html` |
 
 Scripts (`package.json`): `dev`, `build`, `lint`, `preview`.
 
-**Control de versiones:** el directorio no tiene commits todavía. Todos los archivos aparecen como no rastreados (`git status`). Antes de cualquier venta conviene inicializar el historial.
+---
+
+## 3. Arquitectura
+
+```
+Navegador (SPA React)
+ │
+ ├─ main.jsx ── initAuth(): recupera la sesión de Supabase ANTES de renderizar
+ │
+ ├─ /login ──────────────► supabase.auth.signInWithPassword(email, contraseña)
+ │                          + lectura de clinic_members → clínica del usuario
+ │
+ ├─ /admin/* (RequireAuth: sesión + clínica)
+ │    ├─ AdminLayout ── usePersistentState(...) ──┐
+ │    └─ Páginas ────── usePersistentState(...) ──┤
+ │                                                ▼
+ │                          Supabase REST (PostgREST) ── tabla clinic_data
+ │                          (filtrado por RLS: solo la clínica del usuario)
+ │                          + copia local en localStorage (caché)
+ │
+ ├─ /paciente/ficha/:id?c=<clinic_id>  (pública, sin login)
+ │    └─ INSERT en patient_form_submissions (RLS: solo insertar)
+ │
+ ├─ PDF: html2canvas + jsPDF / html2pdf.js en el navegador
+ └─ Correo: EmailJS desde el navegador
+```
+
+**Principio de seguridad:** el frontend nunca decide quién puede ver qué. Esa decisión la toman las políticas RLS en PostgreSQL. Aunque alguien modifique el JavaScript en su navegador, la base solo le devuelve filas de las clínicas de las que es miembro.
 
 ---
 
-## 3. Arquitectura actual
+## 4. Estructura del repositorio
 
 ```
-Navegador (SPA)
- ├─ Login (SHA-256 en cliente) ──► sessionStorage["clinicplus_session"] = "admin" | "setup"
- ├─ Rutas /admin/* (RequireAuth)
- │    ├─ AdminLayout: carga estado persistente y lo pasa por Outlet context
- │    └─ Páginas: lectura/escritura en localStorage vía usePersistentState
- ├─ Ruta pública /paciente/ficha/:patientId (formulario de paciente)
- ├─ PDF: html2canvas + jsPDF, generado en el navegador
- └─ Correo: EmailJS desde el navegador (servicio y plantillas externos)
+MCVD/
+├── .claude/skills/            Skills de Supabase para Claude Code (ver §13)
+├── .mcp.json                  Servidor MCP de Supabase para Claude Code (ver §13)
+├── .env.example               Plantilla de variables de entorno
+├── docs/
+│   ├── DOCUMENTACION_TECNICA.md   Este documento
+│   └── MANUAL_DE_USO.md           Manual para usuarios de la clínica
+├── supabase/migrations/       Migraciones SQL versionadas (esquema + RLS)
+├── public/                    Archivos estáticos
+├── src/
+│   ├── main.jsx               Punto de entrada: initAuth() y render
+│   ├── App.jsx                Rutas y RequireAuth
+│   ├── lib/supabase.js        Cliente de Supabase
+│   ├── utils/
+│   │   ├── auth.js            Login/logout, sesión y clínica actual
+│   │   ├── usePersistentState.js  Estado sincronizado con Supabase
+│   │   ├── emailService.js    Envíos con EmailJS
+│   │   ├── csv.js             Exportación CSV
+│   │   ├── date.js, format.js Utilidades de formato
+│   │   └── sucursales.js      Clave y helpers de sucursales
+│   ├── components/
+│   │   ├── layout/            AdminLayout (menú lateral), coachmarks, header, footer
+│   │   ├── clinical/          Odontograma, periodontograma, historia, tratamientos,
+│   │   │                      presupuesto con PDF, firma
+│   │   └── pro/RecordsPage.jsx  Lista/CRUD/CSV genérico (gastos, laboratorio, etc.)
+│   ├── pages/
+│   │   ├── Login.jsx, PatientSelfForm.jsx
+│   │   ├── admin/             Dashboard, Agenda, Pacientes, Inventario, Reportes,
+│   │   │                      Sucursales, Gastos, Laboratorio, Convenios,
+│   │   │                      Liquidaciones, Settings
+│   │   ├── Imagenologia/      Estudios, visor, plantillas
+│   │   └── Informes/          Lista y constructor de informes radiológicos
+│   ├── data/                  Datos de ejemplo, catálogo de tratamientos,
+│   │                          textos de ayuda, configuración Pro
+│   └── context/LanguageContext.jsx
+├── vercel.json, vite.config.js, eslint.config.js
+└── package.json
 ```
 
-No hay servidor de aplicación. El hosting es estático. Cualquier dato es local al navegador del usuario.
+---
 
-### 3.1 Persistencia: `usePersistentState`
+## 5. Base de datos (Supabase)
 
-Archivo: `src/utils/usePersistentState.js`.
+Proyecto: **CliniPlus Project**, ref `elsgbeupmvsqwkdiineb`, URL `https://elsgbeupmvsqwkdiineb.supabase.co`.
 
-- Equivale a `useState` respaldado por `localStorage` con `JSON.stringify` / `JSON.parse`.
-- Escribe en un `useEffect` cada vez que cambia el valor.
-- **Aislamiento por cuenta:** si la sesión es `setup`, la clave se prefija con `setup:`. Así la cuenta de primer uso no ve ni modifica los datos del admin.
-- No hay control de concurrencia, versionado ni validación de esquema. Un dato corrupto se ignora con un `console.error` y se usa el valor inicial.
+Migración que crea todo: [`supabase/migrations/20261118000000_clinic_schema_auth_rls.sql`](../supabase/migrations/20261118000000_clinic_schema_auth_rls.sql).
 
-### 3.2 Claves de almacenamiento
+### 5.1 Tablas (esquema `public`)
 
-| Clave (cuenta admin) | Contenido | Usado en |
+#### `clinics` — clínicas
+
+| Columna | Tipo | Nota |
 |---|---|---|
-| `clinicplus_patients` | Objeto indexado por id de paciente: datos personales, historia clínica, `treatments[]`, firma de presupuesto | AdminLayout, PatientsList, PatientHistory |
-| `clinicplus_appointments` | Array de citas (`date` YYYY-MM-DD, `time`, `status`, `doctor`, `service`) | AdminLayout, Agenda, Dashboard, Reportes |
-| `clinicplus_inventory` | Array de artículos (`quantity`, `minStock`, `priceUsd`) | Inventory, Reportes |
-| `clinicplus_estudios` | Array de estudios de imagen | AdminLayout, Imagenología |
-| `clinicplus_plantillas` | Plantillas de informe radiológico | Plantillas |
-| `clinicplus_settings` | Perfil de la clínica y alertas | Settings |
+| `id` | `uuid` PK | `gen_random_uuid()` |
+| `name` | `text` | 1–200 caracteres |
+| `demo_data` | `boolean` | `true`: la app arranca con datos de ejemplo |
+| `created_at` | `timestamptz` | |
+
+Filas actuales:
+
+| id | name | demo_data |
+|---|---|---|
+| `6736ae2a-6ab1-4ef4-9e52-876258092f19` | Clínica MCVD | `false` |
+| `28c51a1a-cacc-463b-a946-009f1a328fdb` | Demo MCVD | `true` |
+
+#### `clinic_members` — usuarios de cada clínica
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `clinic_id` | `uuid` FK → `clinics.id` | `on delete cascade` |
+| `user_id` | `uuid` FK → `auth.users.id` | `on delete cascade` |
+| `role` | `text` | `owner` o `staff` (hoy la app no distingue permisos por rol) |
+| `created_at` | `timestamptz` | |
+
+PK: `(clinic_id, user_id)`. Índice en `user_id`.
+
+#### `clinic_data` — datos de la app
+
+| Columna | Tipo | Nota |
+|---|---|---|
+| `clinic_id` | `uuid` FK → `clinics.id` | |
+| `collection` | `text` | Nombre de la colección; debe cumplir `^[a-z0-9_]{1,64}$` |
+| `value` | `jsonb` | Contenido completo de la colección |
+| `updated_at` | `timestamptz` | Lo fija un trigger en cada escritura |
+| `updated_by` | `uuid` FK → `auth.users.id` | Lo fija un trigger con `auth.uid()` |
+
+PK: `(clinic_id, collection)`.
+
+Colecciones que usa la app (valor de `collection`):
+
+| Colección | Contenido | Pantallas |
+|---|---|---|
+| `clinicplus_patients` | Objeto indexado por id de paciente: datos personales, historia clínica, odontograma, periodontograma, `treatments[]`, firmas (PNG en base64) | Pacientes, ficha, Dashboard, Reportes |
+| `clinicplus_appointments` | Array de citas (`date` YYYY-MM-DD, `time`, `status`, `doctor`, `service`, `patient`, `patientEmail`) | Agenda, Dashboard, Reportes |
+| `clinicplus_inventory` | Array de artículos (`quantity`, `minStock`, `priceUsd`, categoría) | Inventario, Dashboard, Reportes |
+| `clinicplus_estudios` | Array de estudios de imagen | Imagenología |
+| `clinicplus_plantillas` | Plantillas de informe radiológico | Imagenología → Plantillas |
+| `clinicplus_settings` | Perfil de la clínica y preferencias | Configuración |
 | `clinicplus_sucursales` | Sedes (`nombre`, `direccion`, `responsable`) | Sucursales, Gastos, Laboratorio, Liquidaciones, Reportes |
 | `clinicplus_gastos` | Gastos (`fecha`, `categoria`, `monto`, `sucursalId`) | Gastos, Reportes |
 | `clinicplus_laboratorio` | Órdenes de laboratorio (`estado`, `costo`, `sucursalId`) | Laboratorio, Reportes |
 | `clinicplus_convenios` | Convenios (`descuento`, `vigente`) | Convenios |
-| `clinicplus_profesionales` | Profesionales y porcentaje de liquidación | Liquidaciones |
+| `clinicplus_profesionales` | Profesionales y % de liquidación | Liquidaciones |
 | `clinicplus_liquidaciones` | Liquidaciones (`honorarios`, `porcentaje`, `monto`, `estado`) | Liquidaciones, Reportes |
 
-Cuenta `setup`: las mismas claves con prefijo `setup:`.
+Una fila se crea la primera vez que alguien de la clínica abre la pantalla que usa esa colección.
 
-Claves de sesión (`sessionStorage`, se pierden al cerrar la pestaña):
+#### `patient_form_submissions` — fichas enviadas por pacientes
 
-| Clave | Valor | Función |
+| Columna | Tipo | Nota |
 |---|---|---|
-| `clinicplus_session` | `admin` o `setup` (el valor antiguo `1` se acepta como `admin`) | Sesión activa |
-| `clinicplus_coach_seen` | Array JSON de secciones ya explicadas | Coachmarks por sesión |
+| `id` | `uuid` PK | |
+| `clinic_id` | `uuid` FK → `clinics.id` | Viene del parámetro `?c=` del enlace |
+| `patient_ref` | `text` | Id de paciente de la URL (≤ 100 caracteres) |
+| `data` | `jsonb` | Respuestas del formulario (< 100 KB) |
+| `submitted_at` | `timestamptz` | |
+| `reviewed_at` | `timestamptz` | `null` hasta que la clínica la marque revisada |
 
-Otras escrituras directas, fuera de `usePersistentState`:
+Índice: `(clinic_id, submitted_at desc)`.
 
-- `PatientSelfForm.jsx` escribe `patient_form_<timestamp>` en el `localStorage` del navegador **del paciente**. El comentario dice "para que el admin lo vea", pero el admin, en otro equipo, no puede leer esa clave. Ver sección 8.
+### 5.2 Funciones y triggers (esquema `private`, no expuesto por la API)
 
-### 3.3 Datos que no se persisten
+| Función | Tipo | Uso |
+|---|---|---|
+| `private.is_clinic_member(cid uuid)` | `security definer`, `stable` | ¿El usuario actual (`auth.uid()`) es miembro de la clínica? La usan las políticas RLS. Ejecutable solo por `authenticated`. |
+| `private.clinic_exists(cid uuid)` | `security definer`, `stable` | ¿Existe la clínica? La usa la política del formulario público, que no puede leer `clinics`. |
+| `private.touch_clinic_data()` | trigger | `BEFORE INSERT OR UPDATE` en `clinic_data`: fija `updated_at = now()` y `updated_by = auth.uid()`. |
 
-- Los ítems del presupuesto (`TreatmentsTab` → `budgetItems`) viven en estado de React. Se pierden al salir de la ficha del paciente o recargar la página.
-- Las notas y la firma del presupuesto se guardan en el paciente solo cuando el flujo lo hace.
+Todas usan `search_path = ''` para evitar suplantación de objetos.
+
+### 5.3 Por qué documentos JSON y no tablas por entidad
+
+**Decisión:** guardar cada colección completa como un `jsonb` por clínica, en lugar de tablas `patients`, `appointments`, etc. con columnas.
+
+**Ventajas:**
+- No hubo que reescribir las ~20 pantallas existentes: siguen trabajando con los mismos objetos que antes.
+- La migración desde `localStorage` es automática (ver [§7.2](#72-migración-automática-desde-la-versión-anterior)).
+- La seguridad no cambia: RLS protege igual por clínica.
+
+**Límites:**
+- **Concurrencia:** si dos personas editan la misma colección a la vez, gana la última escritura (se pierde el cambio de la otra).
+- **Tamaño:** cada cambio reescribe la colección completa. Con muchos pacientes con firmas o imágenes en base64, `clinicplus_patients` crece y cada guardado es más lento.
+- **Consultas:** no se pueden hacer reportes SQL cómodos ni índices por campo.
+- **Auditoría:** solo se sabe quién hizo el último cambio de cada colección, no el historial.
+
+Cuando estos límites empiecen a afectar el uso real, el siguiente paso es normalizar primero las colecciones más grandes o más editadas (pacientes y citas) en tablas propias. Ver [§15](#15-próximos-pasos-recomendados).
 
 ---
 
-## 4. Módulos y rutas
+## 6. Autenticación y control de acceso
 
-Rutas definidas en `src/App.jsx`. Todas bajo `/admin` excepto las marcadas como públicas.
+### 6.1 Inicio de sesión (`src/utils/auth.js`)
 
-| Ruta | Módulo | Archivo | Estado |
+1. **Al abrir la app**, `main.jsx` llama a `initAuth()` antes de renderizar:
+   - `supabase.auth.getSession()` recupera la sesión guardada por Supabase (en `localStorage`, renovada automáticamente).
+   - Si hay sesión, carga la membresía: `clinic_members` + `clinics(name, demo_data)`.
+   - Registra `onAuthStateChange`: si la sesión expira o se cierra en otra pestaña, redirige a `/login`.
+2. **Login** (`login(email, password)`):
+   - `supabase.auth.signInWithPassword`.
+   - Carga la membresía. **Si el usuario no pertenece a ninguna clínica, se cierra la sesión** y se muestra "Tu usuario no tiene una clínica asignada".
+   - Borra `clinicplus_coach_seen` para que vuelvan a mostrarse las ayudas de sección.
+3. **Logout** (`logout()`): limpia el estado y llama a `supabase.auth.signOut()`.
+
+API exportada:
+
+| Función | Devuelve |
+|---|---|
+| `initAuth()` | `Promise<void>` |
+| `login(email, password)` | `{ success: true }` o `{ success: false, error }` |
+| `logout()` | `Promise<void>` |
+| `isAuthenticated()` | `true` si hay sesión **y** clínica |
+| `isSetupAccount()` | `true` si la clínica **no** usa datos de ejemplo (`demo_data = false`) |
+| `getClinicId()`, `getClinicName()` | Clínica actual |
+
+`RequireAuth` (en `App.jsx`) usa `isAuthenticated()` para proteger `/admin/*`.
+
+Si un usuario pertenece a varias clínicas, hoy se usa la primera en la que fue agregado (por `created_at`). No hay selector de clínica.
+
+### 6.2 Reglas de acceso (RLS)
+
+Permisos de tabla (`GRANT`) mínimos + políticas:
+
+| Tabla | `anon` (sin sesión) | `authenticated` (con sesión) |
+|---|---|---|
+| `clinics` | — | Leer solo sus clínicas |
+| `clinic_members` | — | Leer solo sus propias membresías |
+| `clinic_data` | — | Leer, crear, editar y borrar solo de sus clínicas |
+| `patient_form_submissions` | Solo **insertar**, en una clínica existente y con `reviewed_at` vacío | Insertar; leer, marcar revisada y borrar solo de sus clínicas |
+
+Nadie puede crear clínicas ni membresías desde la app: se hace desde el panel de Supabase o por SQL (ver [§12](#12-operación-usuarios-clínicas-y-migraciones)).
+
+### 6.3 Pruebas realizadas
+
+Se probaron en la base, simulando usuarios dentro de una transacción revertida (2026-11-18). Las 10 pasaron:
+
+| Caso | Resultado esperado |
+|---|---|
+| Miembro lee los datos de su clínica | ✅ ve sus filas |
+| Miembro ve solo su clínica | ✅ 1 clínica |
+| Miembro intenta escribir en otra clínica | ✅ rechazado |
+| Usuario sin clínica lee datos | ✅ 0 filas |
+| Usuario sin clínica lee clínicas | ✅ 0 filas |
+| Usuario sin clínica intenta modificar datos | ✅ sin efecto |
+| Anónimo envía una ficha | ✅ permitido |
+| Anónimo lee fichas | ✅ rechazado |
+| Anónimo lee datos de la clínica | ✅ rechazado |
+| Anónimo envía ficha a clínica inexistente | ✅ rechazado |
+
+El asesor de seguridad de Supabase (*Security Advisor*) no reporta alertas.
+
+**Pendiente de probar:** un inicio de sesión real desde el navegador contra Supabase (la red del entorno donde se desarrolló bloquea `supabase.co`).
+
+### 6.4 Recomendaciones de configuración en Supabase
+
+- **Desactivar el registro público:** *Authentication → Sign In / Providers → Email → Allow new users to sign up* = desactivado. Aunque esté activo, un usuario registrado sin membresía no ve datos.
+- **URL del sitio:** *Authentication → URL Configuration → Site URL* = la URL de producción en Vercel, para que los correos de restablecimiento de contraseña apunten al lugar correcto.
+- Considerar MFA para cuentas `owner`.
+
+---
+
+## 7. Persistencia de datos en el frontend
+
+Archivo: `src/utils/usePersistentState.js`. Misma interfaz que `useState`: `const [value, setValue] = usePersistentState(clave, valorInicial)`.
+
+### 7.1 Funcionamiento
+
+1. **Valor inicial inmediato** (para no mostrar la pantalla vacía mientras carga), en este orden:
+   1. Caché local `clinic:<clinic_id>:<clave>` en `localStorage`.
+   2. Datos de la versión anterior (ver §7.2).
+   3. `valorInicial` (datos de ejemplo si la clínica es demo, vacío si no).
+2. **Carga desde Supabase:** `select value from clinic_data where clinic_id = … and collection = …`.
+   - Si existe, reemplaza el valor y actualiza la caché.
+   - Si no existe, **sube el valor actual** (`upsert … ignoreDuplicates`: si otra pestaña lo creó primero, se respeta el suyo).
+   - Si la carga falla, **no se guarda nada** en esa pantalla para no pisar datos de la base con una copia vieja.
+3. **Guardado:** cada cambio se escribe en la caché local y, tras 500 ms sin nuevos cambios, se hace `upsert` en `clinic_data`. Si la pantalla se cierra antes de esos 500 ms, se guarda de inmediato.
+4. Los errores se registran en la consola del navegador (`No se pudo guardar …`). **No hay aviso visual** al usuario.
+
+### 7.2 Migración automática desde la versión anterior
+
+Antes de Supabase, los datos estaban en `localStorage` con estas claves:
+
+- Cuenta admin: `clinicplus_patients`, `clinicplus_appointments`, … (sin prefijo).
+- Cuenta secundaria de primer uso: `setup:clinicplus_patients`, …
+
+La primera vez que un miembro abre una pantalla y la colección **no existe todavía en Supabase**, se sube lo que había en ese navegador:
+
+- Clínica con `demo_data = true` (Demo MCVD) ← claves sin prefijo (antigua cuenta admin).
+- Clínica con `demo_data = false` (Clínica MCVD) ← claves `setup:` (antigua cuenta secundaria).
+
+Las claves antiguas no se borran. **Importante:** el primer navegador que abra cada pantalla define el contenido inicial en Supabase. Conviene que la primera persona en entrar lo haga desde el equipo que tiene los datos reales.
+
+### 7.3 Otras claves locales
+
+| Almacenamiento | Clave | Uso |
+|---|---|---|
+| `localStorage` | `sb-elsgbeupmvsqwkdiineb-auth-token` | Sesión de Supabase (la gestiona supabase-js) |
+| `localStorage` | `clinic:<clinic_id>:<colección>` | Caché de cada colección |
+| `sessionStorage` | `clinicplus_coach_seen` | Secciones cuya ayuda ya se mostró en esta sesión |
+
+---
+
+## 8. Módulos y rutas
+
+Rutas en `src/App.jsx`. Las páginas se cargan de forma diferida (`lazy`).
+
+| Ruta | Módulo | Archivo(s) | Datos |
 |---|---|---|---|
-| `/login` | Acceso | `pages/Login.jsx` | Funcional, cliente |
-| `/admin` | Dashboard | `pages/admin/Dashboard.jsx` | Funcional |
-| `/admin/agenda` | Agenda de citas | `pages/admin/Agenda.jsx` | Funcional |
-| `/admin/patients` | Lista de pacientes | `pages/admin/PatientsList.jsx` | Funcional |
-| `/admin/patients/:id` | Ficha clínica: odontograma, periodontograma, tratamientos, presupuesto, firma | `pages/admin/PatientHistory.jsx` + `components/clinical/*` | Funcional |
-| `/admin/inventory` | Inventario y conversor USD/Bs | `pages/admin/Inventory.jsx` | Funcional |
-| `/admin/imagenologia` | Dashboard de estudios, visor (`estudio/:id`), plantillas | `pages/Imagenologia/*` | Funcional |
-| `/admin/informes` | Lista de informes y constructor (`constructor/:id`) | `pages/Informes/*` | Funcional, datos de ejemplo (`mockInformes`) |
-| `/admin/reportes` | Reportes de gestión y exportación CSV | `pages/admin/Reportes.jsx` | Nuevo |
-| `/admin/sucursales` | Sedes | `pages/admin/Sucursales.jsx` | Nuevo |
-| `/admin/gastos` | Gastos | `pages/admin/Gastos.jsx` | Nuevo |
-| `/admin/laboratorio` | Órdenes de laboratorio | `pages/admin/Laboratorio.jsx` | Nuevo |
-| `/admin/convenios` | Convenios | `pages/admin/Convenios.jsx` | Nuevo |
-| `/admin/liquidaciones` | Profesionales y liquidaciones | `pages/admin/Liquidaciones.jsx` | Nuevo |
-| `/admin/settings` | Configuración de la clínica | `pages/admin/Settings.jsx` | Funcional |
-| `/paciente/ficha/:patientId` | Formulario de historia clínica para el paciente (pública) | `pages/PatientSelfForm.jsx` | Funcional, ver limitación 8.1 |
-| `*` | Redirige a `/` y de ahí a `/login` | `App.jsx` | — |
+| `/login` | Acceso | `pages/Login.jsx` | Supabase Auth |
+| `/admin` | Dashboard | `pages/admin/Dashboard.jsx` | pacientes, citas, inventario |
+| `/admin/agenda` | Agenda | `pages/admin/Agenda.jsx` | `clinicplus_appointments` |
+| `/admin/patients` | Pacientes | `pages/admin/PatientsList.jsx` | `clinicplus_patients` |
+| `/admin/patients/:id` | Ficha clínica | `pages/admin/PatientHistory.jsx`, `components/clinical/*` | `clinicplus_patients` |
+| `/admin/inventory` | Inventario + conversor USD/Bs | `pages/admin/Inventory.jsx` | `clinicplus_inventory` |
+| `/admin/imagenologia` | Estudios | `pages/Imagenologia/Dashboard.jsx` | `clinicplus_estudios` |
+| `/admin/imagenologia/estudio/:id` | Visor | `pages/Imagenologia/VisorEstudio.jsx` | `clinicplus_estudios` |
+| `/admin/imagenologia/plantillas` | Plantillas | `pages/Imagenologia/Plantillas.jsx` | `clinicplus_plantillas` |
+| `/admin/informes` | Informes radiológicos | `pages/Informes/InformesDashboard.jsx` | Datos de ejemplo (`mockInformes`), no persistentes |
+| `/admin/informes/constructor/:id` | Constructor de informe | `pages/Informes/ConstructorInformeMejorado.jsx` | Ídem |
+| `/admin/reportes` | Reportes y exportación CSV | `pages/admin/Reportes.jsx` | Varias colecciones (solo lectura) |
+| `/admin/sucursales` | Sucursales | `pages/admin/Sucursales.jsx` | `clinicplus_sucursales` |
+| `/admin/gastos` | Gastos | `pages/admin/Gastos.jsx` | `clinicplus_gastos` |
+| `/admin/laboratorio` | Laboratorio | `pages/admin/Laboratorio.jsx` | `clinicplus_laboratorio` |
+| `/admin/convenios` | Convenios | `pages/admin/Convenios.jsx` | `clinicplus_convenios` |
+| `/admin/liquidaciones` | Profesionales y liquidaciones | `pages/admin/Liquidaciones.jsx` | `clinicplus_profesionales`, `clinicplus_liquidaciones` |
+| `/admin/settings` | Configuración | `pages/admin/Settings.jsx` | `clinicplus_settings` |
+| `/paciente/ficha/:patientId?c=<clinic_id>` | Formulario del paciente (público) | `pages/PatientSelfForm.jsx` | INSERT en `patient_form_submissions` |
+| `*` | Redirige a `/login` | `App.jsx` | — |
 
-Los módulos Pro nuevos comparten el componente `components/pro/RecordsPage.jsx`: lista, búsqueda, alta, edición, baja y exportación CSV, configurados por props.
+### 8.1 Componentes destacados
 
-### 4.1 Módulos de clínica (detalle)
-
-- **Ficha clínica:** odontograma (`Odontogram.jsx`), periodontograma (`Periodontodiagrama.jsx`, con sondaje de 6 puntos, sangrado, supuración, recesión y movilidad), editor de historia (`ClinicalHistoryEditor.jsx`), firma táctil (`SignatureCanvas.jsx`).
-- **Tratamientos:** catálogo en `data/treatmentCatalog.js` (categorías con `priceUSD`), historial (`patient.treatments`), presupuesto (`BudgetWithPDF.jsx`) con tasa USD/VES editable y envío por correo (`sendBudgetEmail`).
-- **Reportes:** calcula en cliente a partir de citas, pacientes, inventario, gastos, laboratorio y liquidaciones. Filtros por rango de fechas y sucursal. Las citas no tienen sucursal asignada.
-
-### 4.2 Coachmarks
-
-`components/layout/SectionCoachmark.jsx` muestra una explicación la primera vez que se entra a cada sección en una sesión. Los textos están en `data/sectionHelp.js`. Se reinician al iniciar sesión.
+- **`AdminLayout`**: menú lateral, cierre de sesión, y estado compartido (pacientes, citas, inventario, estudios) que pasa a las páginas mediante el contexto de `Outlet`.
+- **`RecordsPage`** (`components/pro/`): lista con búsqueda, alta, edición, baja y exportación CSV, configurada por props (`storageKey`, `fields`, `columns`…). La usan Sucursales, Gastos, Laboratorio, Convenios y Liquidaciones.
+- **Clínicos** (`components/clinical/`): `Odontogram`, `Periodontodiagrama` (sondaje de 6 puntos, sangrado, supuración, recesión, movilidad), `ClinicalHistoryEditor`, `TreatmentsTab` + `BudgetWithPDF` (catálogo en `data/treatmentCatalog.js`, tasa USD/VES editable, PDF A4), `SignatureCanvas`.
+- **Coachmarks** (`components/layout/SectionCoachmark.jsx`, textos en `data/sectionHelp.js`): explicación breve la primera vez que se entra a cada sección en una sesión.
 
 ---
 
-## 5. Autenticación y control de acceso
+## 9. Integraciones externas
 
-Archivo: `src/utils/auth.js`.
+### 9.1 Supabase
 
-### 5.1 Flujo actual
+- Cliente: `src/lib/supabase.js` (`createClient(VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY)`).
+- Servicios usados: Auth (email + contraseña) y Data API (PostgREST). No se usan Storage, Realtime ni Edge Functions.
 
-1. `login(username, password)` calcula `SHA-256(password)` con Web Crypto en el navegador.
-2. Compara usuario (sin espacios) y hash contra las variables de entorno:
-   - Admin: `VITE_ADMIN_USER` y `VITE_ADMIN_PASSWORD_HASH`.
-   - Setup: `VITE_SETUP_USER` y `VITE_SETUP_PASSWORD_HASH`.
-3. Si coincide, guarda el rol en `sessionStorage` y borra `clinicplus_coach_seen`.
-4. `RequireAuth` (en `App.jsx`) redirige a `/login` si no hay sesión.
-5. `logout` borra la clave de sesión.
+### 9.2 EmailJS (`src/utils/emailService.js`)
 
-### 5.2 Limitaciones de seguridad
+| Función | Dónde se usa | Plantilla |
+|---|---|---|
+| `sendAppointmentConfirmation` | Agenda → modal de cita | `VITE_EMAILJS_TEMPLATE_CONFIRM` |
+| `sendAppointmentReminder` | (disponible, sin botón en la UI) | `VITE_EMAILJS_TEMPLATE_REMINDER` |
+| `sendPatientFormLink` | Ficha del paciente → "Enviar Formulario" | `VITE_EMAILJS_TEMPLATE_FORM` |
+| `sendBudgetEmail` | Presupuesto | `VITE_EMAILJS_TEMPLATE_BUDGET` |
 
-- **El hash es visible.** `VITE_*` se incrusta en el bundle JavaScript. Cualquiera puede leer el hash y probar contraseñas sin límite, fuera de línea.
-- **No hay sesión real.** `sessionStorage` lo controla el propio navegador; se puede escribir `clinicplus_session=admin` a mano y entrar.
-- **No hay bloqueo por intentos, ni MFA, ni expiración.**
-- **Los datos de pacientes están en claro** en `localStorage`, sin cifrado y accesibles a cualquier script del mismo origen.
-- **No hay registro de auditoría.** No se sabe quién vio o cambió una ficha.
-- Sin HTTPS, `crypto.subtle` no existe y el login falla (el código lo detecta y avisa).
+- El enlace del formulario es `https://<sitio>/paciente/ficha/<patientId>?c=<clinic_id>`. **El parámetro `c` es obligatorio**: sin él el formulario no se puede enviar.
+- La librería se carga solo cuando se envía un correo. Plan gratuito: 200 correos/mes.
+- **Inconsistencia:** el valor por defecto de la plantilla del formulario en el código es `template_form`, pero `.env.example` usa `template_form_link`. Definir siempre la variable.
 
-Conclusión: sirve para un consultorio único en un equipo de confianza. No cumple los requisitos para datos de salud de varias clínicas.
+### 9.3 PDF
+
+- Presupuesto: `BudgetWithPDF.jsx` clona el nodo a 794 px (A4), lo captura con html2canvas y lo pagina con jsPDF.
+- Informes: `ConstructorInformeMejorado.jsx` usa html2pdf.js.
+
+### 9.4 No implementado
+
+- **Link de pago** (Dashboard): genera una URL de ejemplo (`https://clinicplus.com/pay/…`) sin pasarela real. No cobra.
+- Sin facturación electrónica, pasarelas de pago, DICOM ni integraciones con aseguradoras.
 
 ---
 
-## 6. Configuración y variables de entorno
+## 10. Configuración y variables de entorno
 
-Se leen en tiempo de build con `import.meta.env`. Cambiar una variable exige reconstruir (en desarrollo, reiniciar `npm run dev`).
+Vite incrusta las variables `VITE_*` en el bundle al compilar: **cambiar una exige volver a desplegar** (en local, reiniciar `npm run dev`). Todas son públicas por diseño; no poner secretos en variables `VITE_*`.
 
 | Variable | Obligatoria | Uso |
 |---|---|---|
-| `VITE_ADMIN_USER` | Sí, para el acceso admin | Usuario admin |
-| `VITE_ADMIN_PASSWORD_HASH` | Sí, para el acceso admin | SHA-256 hex de la contraseña admin |
-| `VITE_SETUP_USER` | Opcional | Usuario de primer uso |
-| `VITE_SETUP_PASSWORD_HASH` | Opcional | Hash de la cuenta de primer uso |
-| `VITE_EMAILJS_SERVICE_ID` | Para correos | Servicio de EmailJS (por defecto `service_mcvd`) |
+| `VITE_SUPABASE_URL` | **Sí** | `https://elsgbeupmvsqwkdiineb.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | **Sí** | Clave publicable (`sb_publishable_…`). Segura en el navegador; la protección la da RLS |
+| `VITE_EMAILJS_SERVICE_ID` | Para correos | Servicio de EmailJS |
 | `VITE_EMAILJS_PUBLIC_KEY` | Para correos | Clave pública de EmailJS |
 | `VITE_EMAILJS_TEMPLATE_CONFIRM` | Para correos | Confirmación de cita |
-| `VITE_EMAILJS_TEMPLATE_REMINDER` | Para correos | Recordatorio de cita |
+| `VITE_EMAILJS_TEMPLATE_REMINDER` | Para correos | Recordatorio |
 | `VITE_EMAILJS_TEMPLATE_FORM` | Para correos | Enlace al formulario del paciente |
-| `VITE_EMAILJS_TEMPLATE_BUDGET` | Para correos | Envío de presupuesto |
+| `VITE_EMAILJS_TEMPLATE_BUDGET` | Para correos | Presupuesto |
 
-Generar un hash:
+**Eliminadas:** `VITE_ADMIN_USER`, `VITE_ADMIN_PASSWORD_HASH`, `VITE_SETUP_USER`, `VITE_SETUP_PASSWORD_HASH`. Ya no se usan; se pueden borrar de Vercel.
 
+Archivos: `.env` (local, no se versiona) y `.env.example` (plantilla versionada).
+
+**Nunca** poner la clave `service_role` / secreta de Supabase en el frontend: salta todas las reglas RLS.
+
+---
+
+## 11. Desarrollo local, build y despliegue
+
+### 11.1 Requisitos
+
+- Node.js 20 o superior (probado con 22) y npm.
+
+### 11.2 Puesta en marcha
+
+```bash
+git clone https://github.com/lemarealejandro/MCVD.git
 ```
-node -e "console.log(require('crypto').createHash('sha256').update(process.argv[1]).digest('hex'))" 'contraseña'
+
+```bash
+cd MCVD && npm install
 ```
 
-Archivos: `.env.local` (local, no versionar) y `.env.example` (plantilla). Producción: las mismas variables en Vercel → Project Settings → Environment Variables.
+```bash
+cp .env.example .env
+```
+
+Completar las variables de EmailJS en `.env` si se van a enviar correos, y luego:
+
+```bash
+npm run dev
+```
+
+La app queda en `http://localhost:5173`. Se trabaja **contra la base de producción** de Supabase (no hay entorno local separado; ver §15).
+
+### 11.3 Calidad y build
+
+```bash
+npm run lint
+```
+
+```bash
+npm run build
+```
+
+El build genera `dist/`. `npm run preview` lo sirve en local.
+
+### 11.4 Despliegue en Vercel
+
+1. En *Project Settings → Environment Variables*, definir todas las variables de §10 (al menos las dos de Supabase).
+2. Desplegar la rama. `vercel.json` reescribe cualquier ruta a `index.html` para que funcionen las rutas de React Router.
+3. En Supabase, poner la URL de producción en *Authentication → URL Configuration*.
 
 ---
 
-## 7. Integraciones externas
+## 12. Operación: usuarios, clínicas y migraciones
 
-### 7.1 EmailJS (`src/utils/emailService.js`)
+Estas tareas se hacen en el panel de Supabase (**SQL Editor** para el SQL) o pidiéndoselas a Claude Code, que tiene acceso por MCP (ver §13).
 
-- Cliente cargado de forma diferida (`import('@emailjs/browser')`).
-- Funciones: `sendAppointmentConfirmation`, `sendAppointmentReminder`, `sendPatientFormLink`, `sendBudgetEmail`.
-- Límite del plan gratuito citado en el código: 200 correos al mes.
-- Las credenciales de EmailJS son de cliente (públicas por diseño de EmailJS), pero el envío lo hace el navegador de quien usa la app. No hay registro central de envíos.
+### 12.1 Dar acceso a una persona
 
-**Inconsistencia detectada:** la plantilla del formulario de paciente tiene como valor por defecto `template_form` en `emailService.js`, pero `.env.example` documenta `template_form_link`. Si la variable no se define, se usa un identificador que puede no existir en la cuenta de EmailJS.
+1. Crear el usuario: *Authentication → Users → Add user → Create new user* (correo + contraseña, marcar *Auto Confirm User*), o *Send invitation* para que elija su contraseña.
+2. Asignarlo a una clínica:
 
-### 7.2 PDF
+```sql
+insert into public.clinic_members (clinic_id, user_id, role)
+select '6736ae2a-6ab1-4ef4-9e52-876258092f19', id, 'staff'
+from auth.users where email = 'persona@ejemplo.com';
+```
 
-- Presupuesto: `BudgetWithPDF.jsx` clona el nodo fuera de pantalla a 794 px (ancho A4), lo captura con html2canvas y lo pagina en jsPDF.
-- Informes: `ConstructorInformeMejorado.jsx` usa `html2pdf.js` para exportar.
+(Usar `28c51a1a-cacc-463b-a946-009f1a328fdb` para Demo MCVD; `owner` en lugar de `staff` para responsables.)
 
-### 7.3 Sin integraciones de salud
+### 12.2 Quitar acceso
 
-No hay conexión con SII (facturación electrónica), Fonasa, Isapres, pasarelas de pago, laboratorios externos por API, ni DICOM. La lectura de radiografías es manual.
+```sql
+delete from public.clinic_members
+where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
+```
 
----
+Para bloquear del todo, eliminar también el usuario en *Authentication → Users*.
 
-## 8. Limitaciones técnicas conocidas
+### 12.3 Restablecer una contraseña
 
-### 8.1 Bugs y riesgos de datos
+*Authentication → Users →* (usuario) *→ Send password recovery*. La app no tiene todavía pantalla de "olvidé mi contraseña" propia; el enlace del correo lleva a la *Site URL* configurada.
 
-1. **Formulario de paciente no llega a la clínica.** `PatientSelfForm.jsx` guarda la respuesta en el `localStorage` del navegador del paciente. Si el paciente llena el formulario en su celular, el admin en su computadora no la ve. Requiere un endpoint o almacenamiento central.
-2. **Presupuesto sin persistencia.** Los ítems del presupuesto se pierden al recargar (sección 3.3).
-3. **Citas sin sucursal.** `appointments` no tiene `sucursalId`, así que los reportes no filtran citas por sede.
-4. **Informes con datos de ejemplo.** `mockInformes` viene de `data/mockData.js` y no se edita desde la app. La cuenta `setup` oculta esos datos, pero no existe un CRUD persistente de informes.
-5. **Datos de ejemplo cargados por defecto.** `data/mockData.js` y `data/content.js` contienen pacientes, citas e inventario ficticios que la cuenta admin ve al entrar. No deben usarse con clínicas reales.
-6. **Sin versionado de esquema.** Si cambia la forma de un objeto, los datos antiguos en `localStorage` no se migran.
-7. **Sin copias de seguridad.** Limpiar el navegador borra todo. No hay respaldo.
-8. **Sin pruebas automatizadas.** No hay tests unitarios ni de integración; solo `npm run lint` y `npm run build`.
-9. **Duplicación de estilos.** Conviven CSS global, estilos inline y clases de Tailwind sin una convención clara.
-10. **Dos librerías de PDF.** El presupuesto usa html2canvas + jsPDF y los informes usan html2pdf.js. Conviene unificar.
+### 12.4 Crear otra clínica
 
-### 8.2 Rendimiento
+```sql
+insert into public.clinics (name, demo_data) values ('Nueva Clínica', false) returning id;
+```
 
-- Todo el estado completo de cada colección se reescribe en `localStorage` en cada cambio. Con cientos de pacientes con imágenes o firmas, se acerca al límite de cuota (≈5 MB por origen en la mayoría de navegadores). La firma en PNG base64 y las imágenes de estudios son los mayores consumidores.
-- Los filtros y reportes recorren arrays completos en cada render.
+Después asignar usuarios con el `id` devuelto (§12.1).
 
----
+### 12.5 Ver las fichas enviadas por pacientes
 
-## 9. Requisitos para vender a varias clínicas
+No hay pantalla en la app todavía. En *Table Editor → patient_form_submissions*, o:
 
-Objetivo: cada clínica entra con su propio usuario a **su portal**, sus datos quedan aislados y no ve los de otra clínica.
+```sql
+select submitted_at, patient_ref, data->>'name' as nombre, data->>'phone' as telefono, data
+from public.patient_form_submissions
+where clinic_id = '6736ae2a-6ab1-4ef4-9e52-876258092f19' and reviewed_at is null
+order by submitted_at desc;
+```
 
-### 9.1 Modelo de tenant
+Marcar como revisada:
 
-- **Tenant = clínica.** Cada tenant tiene un identificador (`tenant_id`, UUID) y sus datos.
-- **Identificación en la URL:** subdominio (`clinica-x.app.dominio.cl`) o ruta (`app.dominio.cl/c/clinica-x`). El subdominio es más limpio para marca blanca; la ruta es más simple al inicio.
-- **Usuarios por tenant:** cada usuario pertenece a un tenant y tiene un rol (`admin`, `dentista`, `recepcion`, `solo_lectura`). Un mismo email puede pertenecer a varias clínicas solo si se diseña así explícitamente.
-- **Super-admin del proveedor:** rol fuera de todos los tenants, para crear clínicas, suspenderlas y ver métricas de uso sin ver datos clínicos.
+```sql
+update public.patient_form_submissions set reviewed_at = now() where id = '<id>';
+```
 
-### 9.2 Backend obligatorio
+### 12.6 Copias de seguridad
 
-Eliminar la lógica de acceso del cliente. El backend debe:
+Supabase hace copias diarias según el plan contratado (*Database → Backups*). Para una copia manual de los datos de una clínica:
 
-1. Autenticar usuarios (contraseñas con **argon2id** o bcrypt; nunca hashes SHA-256 sin sal en el cliente).
-2. Emitir sesiones: cookies `HttpOnly`, `Secure`, `SameSite=Strict` o tokens de corta duración con refresco.
-3. Autorizar **cada** petición comprobando `tenant_id` y rol en el servidor.
-4. Persistir en base de datos relacional (PostgreSQL recomendado) con todas las tablas que hoy son claves de `localStorage`, más `tenants`, `users`, `memberships`, `audit_logs`.
+```sql
+select collection, value, updated_at
+from public.clinic_data where clinic_id = '6736ae2a-6ab1-4ef4-9e52-876258092f19';
+```
 
-Opciones de implementación (no excluyentes):
+Exportar el resultado a CSV/JSON desde el SQL Editor.
 
-- **Backend as a Service con Postgres y RLS** (por ejemplo Supabase): políticas de *row level security* por `tenant_id`. Rápido de montar, pero la lógica de autorización queda en políticas SQL que hay que probar bien.
-- **API propia** (Node/TypeScript, Fastify o Express, o similar) con ORM y middleware de tenant. Más control, más trabajo.
+### 12.7 Cambios de esquema
 
-En ambos casos, el aislamiento debe probarse con pruebas automatizadas: un usuario del tenant A no debe poder leer, editar ni listar datos del tenant B, ni por id directo.
-
-### 9.3 Cambios en el frontend
-
-- Reemplazar `usePersistentState` por un cliente de datos (por ejemplo TanStack Query + fetch) con las mismas formas de objeto. Mantener los nombres de campo para no reescribir las páginas.
-- Login contra el backend; `RequireAuth` consulta la sesión del servidor, no `sessionStorage`.
-- Resolver el tenant desde el host o la ruta antes de cualquier llamada.
-- Quitar del bundle las variables sensibles: `VITE_ADMIN_PASSWORD_HASH` y `VITE_SETUP_*` dejan de existir.
-- Migrar datos existentes: script que lea el `localStorage` exportado (JSON) y lo cargue en el tenant correspondiente.
-
-### 9.4 Almacenamiento de archivos
-
-Firmas, radiografías y PDFs de presupuesto deben guardarse en almacenamiento de objetos (S3 o equivalente) con prefijo por tenant, acceso por URL firmada de vida corta y sin listado público. Hoy se guardan en base64 dentro del paciente.
-
-### 9.5 Facturación y planes
-
-- Suscripción por clínica (mensual o anual), con planes: Esencial, Pro, etc. Los límites por plan (usuarios, sucursales, almacenamiento, correos) deben vivir en el backend.
-- Pasarela de pago (por ejemplo una local con soporte de tarjetas chilenas) y registro de facturas emitidas por el proveedor. La facturación electrónica al SII requiere certificado digital y CAF, y en general un proveedor certificado; evaluarla antes de prometerla.
-- Estado de la cuenta: activa, en gracia, suspendida, cancelada, con política de retención de datos definida por contrato.
-
-### 9.6 Cumplimiento para datos de salud en Chile
-
-Revisar con asesoría legal antes de firmar con clínicas. Puntos mínimos a cubrir técnica y contractualmente:
-
-- **Ficha clínica:** el Decreto 41 del Minsal fija un plazo mínimo de conservación de la ficha. La documentación del proveedor debe describir cómo se respeta y cómo se exporta.
-- **Protección de datos personales:** Ley 19.628 vigente hoy. La Ley 21.719 tiene fecha de entrada en vigor en discusión legislativa (las fuentes revisadas dan fechas distintas); verificar el estado vigente a la fecha de firma.
-- **Contrato de encargo de tratamiento** entre la clínica (responsable) y el proveedor (encargado), con lista de subencargados (hosting, correo, almacenamiento) y ubicación de los datos.
-- **Seguridad:** cifrado en tránsito (TLS) y en reposo, copias de seguridad probadas con restauración, registro de accesos y cambios a fichas (quién, cuándo, qué), gestión de incidentes con plazo de notificación.
-- **Derechos de los titulares:** acceso, rectificación, cancelación y portabilidad, con procedimiento documentado.
-- **Consentimiento y finalidad:** la política de privacidad debe describir finalidades concretas. No usar datos de pacientes para entrenar modelos sin base legal.
-
-### 9.7 Operación
-
-- Entornos separados: desarrollo, staging, producción. Migraciones de base de datos versionadas.
-- Copias de seguridad automáticas con retención definida y restauración probada periódicamente.
-- Monitoreo: errores (por ejemplo Sentry), logs de backend, disponibilidad.
-- Soporte: canal, tiempos de respuesta y ventanas de mantenimiento en el contrato.
-- Pruebas: unitarias y de integración del backend, pruebas de aislamiento entre tenants, pruebas end-to-end de los flujos de clínica (cita, ficha, presupuesto, boleta).
-- Control de versiones: inicializar el repositorio con historial antes de cualquier entrega.
+- Cada cambio va en un archivo nuevo en `supabase/migrations/` con prefijo de fecha `YYYYMMDDHHMMSS_descripcion.sql`, y se aplica en el proyecto (SQL Editor, CLI de Supabase o Claude Code por MCP).
+- Toda tabla nueva en `public` debe tener RLS activado y políticas antes de usarse.
+- Después de cada cambio, revisar *Advisors → Security* en Supabase.
 
 ---
 
-## 10. Plan de trabajo sugerido
+## 13. Herramientas para Claude Code
 
-Las estimaciones son orientativas y dependen del equipo; no están validadas.
-
-| Fase | Alcance | Criterio de salida |
-|---|---|---|
-| 0. Base | Repositorio con historial, pruebas mínimas, CI con lint y build, separar config de secretos | Historial y CI verdes |
-| 1. Backend y datos | Postgres, esquema por tenant con `tenant_id`, API de lectura y escritura para pacientes, citas e inventario, auth real | Pruebas de aislamiento entre tenants pasando |
-| 2. Migración del frontend | Reemplazar `usePersistentState` por cliente de API, login contra servidor, resolver tenant por URL | Flujo completo de cita y ficha funcionando contra API |
-| 3. Módulos restantes | Presupuesto, informes, imagenología con archivos en almacenamiento, Pro (reportes, gastos, laboratorio, convenios, liquidaciones, sucursales) | Paridad de funciones con la versión local |
-| 4. Cumplimiento y seguridad | Auditoría de accesos, cifrado, respaldos probados, contrato de encargo, política de privacidad revisada | Revisión legal y prueba de restauración documentadas |
-| 5. Comercial | Super-admin, alta de clínicas, facturación y planes, soporte | Una clínica piloto operando con datos reales |
-
-Antes de la fase 5 conviene un piloto con una clínica real, con datos migrados y respaldos verificados.
+- **`.mcp.json`**: registra el servidor MCP de Supabase (`https://mcp.supabase.com/mcp?project_ref=elsgbeupmvsqwkdiineb&…`). Permite a Claude Code consultar tablas, aplicar migraciones, revisar logs y advisors. En local requiere autenticarse una vez con `/mcp` → *supabase* → *Authenticate*. En sesiones de Claude Code en la nube se usa el conector de Supabase de claude.ai.
+- **`.claude/skills/`**: skills oficiales de Supabase (`supabase`, `supabase-postgres-best-practices`) con buenas prácticas de esquema, RLS y rendimiento. Versiones fijadas en `skills-lock.json`.
 
 ---
 
-## 11. Checklist de aceptación para venta
+## 14. Limitaciones conocidas
 
-- [ ] Login con usuario propio por clínica, contraseña con hash fuerte en servidor y MFA opcional.
-- [ ] Cada clínica entra a su URL o subdominio y solo ve sus datos.
-- [ ] Pruebas automatizadas de aislamiento entre tenants en verde.
-- [ ] Ningún secreto ni hash de contraseña en el bundle del navegador.
-- [ ] Registro de auditoría de accesos y cambios a fichas clínicas.
-- [ ] Copias de seguridad automáticas con restauración probada.
-- [ ] Contrato de encargo y política de privacidad revisados por abogado.
-- [ ] Formulario de paciente conectado al servidor (sección 8.1, punto 1).
-- [ ] Exportación completa de los datos de una clínica en formato documentado.
-- [ ] Procedimiento de baja y eliminación de datos al término del contrato.
-- [ ] Repositorio con historial, CI y migraciones versionadas.
+### 14.1 Datos y concurrencia
+
+1. **Última escritura gana:** dos personas editando la misma sección a la vez pueden pisarse cambios (§5.3).
+2. **Sin tiempo real:** los cambios de otra persona se ven al recargar o volver a entrar a la pantalla.
+3. **Errores de guardado silenciosos:** si falla la conexión, el cambio queda solo en la caché local del navegador y se registra en consola, sin aviso visible.
+4. **Imágenes y firmas en base64** dentro de `clinicplus_patients` y `clinicplus_estudios`: hacen crecer la colección. Deberían ir a Supabase Storage.
+5. **Presupuesto sin persistencia:** los ítems del presupuesto (`TreatmentsTab` → `budgetItems`) viven solo en memoria y se pierden al salir de la ficha.
+6. **Informes radiológicos con datos de ejemplo** (`mockInformes`): no se crean ni guardan desde la app.
+7. **Citas sin sucursal:** los reportes no pueden filtrar citas por sede.
+
+### 14.2 Funcionalidad
+
+8. **Sin pantalla para fichas de pacientes recibidas** (se ven en Supabase, §12.5).
+9. **Sin "olvidé mi contraseña"** en la app ni gestión de usuarios desde la app.
+10. **Roles sin efecto:** `owner` y `staff` tienen los mismos permisos.
+11. **Un usuario = una clínica activa** (sin selector).
+12. **Link de pago simulado** (§9.4).
+13. **Enlaces de formulario antiguos** (sin `?c=`) no permiten enviar.
+
+### 14.3 Calidad
+
+14. **Sin pruebas automatizadas** de frontend; solo `lint` y `build`. Las pruebas de RLS de §6.3 se ejecutaron a mano.
+15. **Sin entorno de staging:** desarrollo y producción usan la misma base.
+16. **Estilos mezclados** (CSS global, inline y Tailwind) y **dos librerías de PDF**.
 
 ---
 
-## 12. Glosario
+## 15. Próximos pasos recomendados
 
-- **Tenant:** clínica cliente con datos aislados.
-- **RLS (Row Level Security):** restricción en la base de datos que limita las filas visibles según el usuario.
-- **Encargado de tratamiento:** quien procesa datos por cuenta del responsable (en este caso el proveedor, por cuenta de la clínica).
-- **Subencargado:** tercero que el encargado usa para procesar datos (hosting, correo, almacenamiento).
+En orden de impacto:
+
+1. **Pantalla de fichas recibidas** en la app (leer `patient_form_submissions`, importar al paciente, marcar revisada).
+2. **Aviso visible de errores de guardado** y estado "guardando / guardado".
+3. **Recuperación de contraseña** en la pantalla de login (`supabase.auth.resetPasswordForEmail`).
+4. **Archivos a Supabase Storage** (firmas, imágenes de estudios, PDFs) con políticas por clínica.
+5. **Normalizar pacientes y citas** en tablas propias cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.
+6. **Proyecto de staging** en Supabase (o *branching*) para probar migraciones antes de producción.
+7. **Pruebas automatizadas** de aislamiento entre clínicas (RLS) en CI.
+8. Revisión legal de cumplimiento para datos de salud (ficha clínica, protección de datos personales, contrato de encargo de tratamiento con los proveedores: Supabase, Vercel, EmailJS).
+
+---
+
+## 16. Glosario
+
+- **Clínica / tenant:** organización con datos aislados (`clinics`).
+- **Miembro:** usuario de Supabase Auth asignado a una clínica (`clinic_members`).
+- **Colección:** cada conjunto de datos de la app (pacientes, citas…), guardado como una fila de `clinic_data`.
+- **RLS (Row Level Security):** reglas de PostgreSQL que filtran qué filas puede leer o escribir cada usuario.
+- **Clave publicable:** clave de Supabase pensada para el navegador; por sí sola no da acceso a datos protegidos por RLS.
+- **`service_role` / clave secreta:** clave de administrador de Supabase que ignora RLS. Nunca debe ir al frontend.
+- **MCP:** *Model Context Protocol*; permite a Claude Code operar sobre Supabase.
