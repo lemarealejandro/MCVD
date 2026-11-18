@@ -475,7 +475,7 @@ Completar las variables de EmailJS en `.env` si se van a enviar correos, y luego
 npm run dev
 ```
 
-La app queda en `http://localhost:5173`. Se trabaja **contra la base de producción** de Supabase (no hay entorno local separado; ver §15).
+La app queda en `http://localhost:5173`. Con el `.env` de `.env.example` se trabaja **contra la base de producción**. Para desarrollar sin tocar datos reales, usa en tu `.env` las variables del ambiente de pruebas (§11.5).
 
 ### 11.3 Calidad y build
 
@@ -494,6 +494,44 @@ El build genera `dist/`. `npm run preview` lo sirve en local.
 1. En *Project Settings → Environment Variables*, definir todas las variables de §10 (al menos las dos de Supabase).
 2. Desplegar la rama. `vercel.json` reescribe cualquier ruta a `index.html` para que funcionen las rutas de React Router.
 3. En Supabase, poner la URL de producción en *Authentication → URL Configuration*.
+
+---
+
+### 11.5 Ambiente de pruebas (staging)
+
+Copia completa del sistema para probar cambios sin tocar los datos reales.
+
+| | Producción | Pruebas |
+|---|---|---|
+| Rama de GitHub | `main` | `staging` |
+| App (Vercel) | https://mcvd.vercel.app | Despliegue *Preview* de la rama `staging` (p. ej. `https://mcvd-git-staging-lemarealejandros-projects.vercel.app`; la dirección exacta aparece en Vercel → Deployments) |
+| Proyecto de Supabase | **CliniPlus Project** (`elsgbeupmvsqwkdiineb`) | **CliniPlus Pruebas** (`tetemzzaqyqcmmshhswq`, plan gratuito, región `us-west-1`) |
+| `VITE_SUPABASE_URL` | `https://elsgbeupmvsqwkdiineb.supabase.co` | `https://tetemzzaqyqcmmshhswq.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_ZZoJgR0cAw1c6tLQxNf9_w_-_WD48GS` | `sb_publishable__3ICTuUDxq-1p0SEaxJuvg_b_EWBLw6` |
+| Clínicas iniciales | Clínica MCVD, Demo MCVD (+ las aprobadas) | Clínica Pruebas, Demo Pruebas |
+| Datos | Reales | De prueba; se pueden borrar |
+
+El proyecto de pruebas tiene las mismas migraciones (`supabase/migrations/`) y las mismas Edge Functions (`clinic-signup`, `clinic-approval`) que producción, aplicadas el 2026-11-18.
+
+**Configuración en Vercel (una sola vez):** *Settings → Environment Variables*, agregar las dos variables de la columna *Pruebas* con **Environment = Preview** y **rama `staging`**. Las variables de producción quedan en *Production*. Después de cambiarlas, hacer **Redeploy** del deployment de `staging`.
+
+**Secretos de las Edge Functions en pruebas:** `RESEND_API_KEY` se configura aparte en el proyecto de pruebas (*Edge Functions → Secrets*). Sin ella, las solicitudes se guardan pero no llega correo.
+
+**Usuarios de pruebas:** se crean en el proyecto de pruebas (*Authentication → Users → Add user*, con *Auto Confirm User*) y se asignan con el mismo SQL de §12.1 usando los ids de las clínicas de pruebas, o registrándose con **Solicita acceso** en la app de pruebas.
+
+#### Flujo de trabajo
+
+1. **Código:** subir los cambios a `staging` (directo o con un pull request hacia `staging`). Vercel publica la versión de pruebas sola.
+2. **Base de datos:** si el cambio trae una migración nueva, aplicarla **primero en el proyecto de pruebas** (SQL Editor o Claude Code por MCP). Lo mismo con Edge Functions nuevas o modificadas.
+3. **Probar** en la app de pruebas.
+4. **Pasar a producción:** aplicar la misma migración / función en **CliniPlus Project** y fusionar `staging` → `main` con un pull request. Vercel publica producción.
+5. **Sincronizar:** si `main` recibe cambios que no pasaron por `staging` (por ejemplo un arreglo urgente), traerlos a `staging` con un pull request `main` → `staging`. **`staging` no se actualiza sola.**
+
+Reglas:
+
+- Nunca poner las variables de producción en *Preview* sin rama, ni las de pruebas en *Production*.
+- Los usuarios, clínicas y solicitudes de un ambiente no existen en el otro.
+- El ambiente de pruebas no tiene copia de los datos reales. No copiar datos de pacientes reales a pruebas.
 
 ---
 
@@ -565,6 +603,7 @@ Exportar el resultado a CSV/JSON desde el SQL Editor.
 
 ### 12.7 Cambios de esquema
 
+- Probar primero en el ambiente de pruebas (§11.5).
 - Cada cambio va en un archivo nuevo en `supabase/migrations/` con prefijo de fecha `YYYYMMDDHHMMSS_descripcion.sql`, y se aplica en el proyecto (SQL Editor, CLI de Supabase o Claude Code por MCP).
 - Toda tabla nueva en `public` debe tener RLS activado y políticas antes de usarse.
 - Después de cada cambio, revisar *Advisors → Security* en Supabase.
@@ -677,7 +716,7 @@ where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
 ### 14.3 Calidad
 
 14. **Sin pruebas automatizadas** de frontend; solo `lint` y `build`. Las pruebas de RLS de §6.3 se ejecutaron a mano.
-15. **Sin entorno de staging:** desarrollo y producción usan la misma base.
+15. **Ambiente de pruebas manual:** existe (§11.5), pero las migraciones y funciones se aplican a mano en cada proyecto y `staging` hay que sincronizarla con `main` a mano.
 16. **Estilos mezclados** (CSS global, inline y Tailwind) y **dos librerías de PDF**.
 
 ---
@@ -691,7 +730,7 @@ En orden de impacto:
 3. **Recuperación de contraseña** en la pantalla de login (`supabase.auth.resetPasswordForEmail`).
 4. **Archivos a Supabase Storage** (firmas, imágenes de estudios, PDFs) con políticas por clínica.
 5. **Normalizar pacientes y citas** en tablas propias (hay una propuesta completa, con roles por clínica, auditoría y Storage, en [`docs/backend-normalizado-propuesta/`](../docs/backend-normalizado-propuesta/LEEME.md); no está aplicada) cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.
-6. **Proyecto de staging** en Supabase (o *branching*) para probar migraciones antes de producción.
+6. **Automatizar el ambiente de pruebas** (§11.5): aplicar migraciones y desplegar funciones desde GitHub Actions al subir a `staging` y a `main`.
 7. **Pruebas automatizadas** de aislamiento entre clínicas (RLS) en CI.
 8. Revisión legal de cumplimiento para datos de salud (ficha clínica, protección de datos personales, contrato de encargo de tratamiento con los proveedores: Supabase, Vercel, EmailJS).
 

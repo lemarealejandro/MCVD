@@ -435,6 +435,14 @@ where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
 </ul>
 <p>El panel <strong>no muestra pacientes ni datos clínicos</strong> de las clínicas. Al aprobar, el sistema no le envía correo a la persona: avísale tú.</p>
 <p>Si además perteneces a una clínica, entras a tu clínica y verás <strong>Administración</strong> al final del menú lateral.</p>
+<h3 id="m-139-ambiente-de-pruebas">13.9 Ambiente de pruebas</h3>
+<p>Existe una copia del sistema para probar cambios <strong>sin tocar los datos reales</strong>:</p>
+<ul>
+<li><strong>Producción</strong> (la que usa la clínica): <a href="https://mcvd.vercel.app" target="_blank" rel="noopener">https://mcvd.vercel.app</a></li>
+<li><strong>Pruebas:</strong> la dirección de la rama <code>staging</code> en Vercel (<em>Deployments</em> → el que dice <strong>staging</strong>).</li>
+</ul>
+<p>Las dos tienen usuarios, clínicas y datos <strong>separados</strong>: una cuenta creada en pruebas no sirve en producción y viceversa. En pruebas puedes registrar clínicas, aprobar solicitudes y cargar pacientes ficticios sin riesgo. <strong>No cargues datos de pacientes reales en pruebas.</strong></p>
+<p>Los cambios nuevos se publican primero en pruebas y, cuando están revisados, pasan a producción. El detalle técnico está en la documentación técnica, §11.5.</p>
 <hr>
 <h2 id="m-14-preguntas-frecuentes-y-problemas">14. Preguntas frecuentes y problemas</h2>
 <p><strong>No veo los cambios que hizo un compañero.</strong>
@@ -1335,7 +1343,7 @@ Probablemente estás en la clínica <strong>Demo MCVD</strong>, que tiene datos 
 <div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>cp .env.example .env</code></pre></div>
 <p>Completar las variables de EmailJS en <code>.env</code> si se van a enviar correos, y luego:</p>
 <div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>npm run dev</code></pre></div>
-<p>La app queda en <code>http://localhost:5173</code>. Se trabaja <strong>contra la base de producción</strong> de Supabase (no hay entorno local separado; ver §15).</p>
+<p>La app queda en <code>http://localhost:5173</code>. Con el <code>.env</code> de <code>.env.example</code> se trabaja <strong>contra la base de producción</strong>. Para desarrollar sin tocar datos reales, usa en tu <code>.env</code> las variables del ambiente de pruebas (§11.5).</p>
 <h3 id="t-113-calidad-y-build">11.3 Calidad y build</h3>
 <div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>npm run lint</code></pre></div>
 <div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>npm run build</code></pre></div>
@@ -1346,6 +1354,68 @@ Probablemente estás en la clínica <strong>Demo MCVD</strong>, que tiene datos 
 <li>Desplegar la rama. <code>vercel.json</code> reescribe cualquier ruta a <code>index.html</code> para que funcionen las rutas de React Router.</li>
 <li>En Supabase, poner la URL de producción en <em>Authentication → URL Configuration</em>.</li>
 </ol>
+<hr>
+<h3 id="t-115-ambiente-de-pruebas-staging">11.5 Ambiente de pruebas (staging)</h3>
+<p>Copia completa del sistema para probar cambios sin tocar los datos reales.</p>
+<div class="table-wrap"><table><thead><tr>
+<th></th>
+<th>Producción</th>
+<th>Pruebas</th>
+</tr>
+</thead><tbody><tr>
+<td>Rama de GitHub</td>
+<td><code>main</code></td>
+<td><code>staging</code></td>
+</tr>
+<tr>
+<td>App (Vercel)</td>
+<td><a href="https://mcvd.vercel.app" target="_blank" rel="noopener">https://mcvd.vercel.app</a></td>
+<td>Despliegue <em>Preview</em> de la rama <code>staging</code> (p. ej. <code>https://mcvd-git-staging-lemarealejandros-projects.vercel.app</code>; la dirección exacta aparece en Vercel → Deployments)</td>
+</tr>
+<tr>
+<td>Proyecto de Supabase</td>
+<td><strong>CliniPlus Project</strong> (<code>elsgbeupmvsqwkdiineb</code>)</td>
+<td><strong>CliniPlus Pruebas</strong> (<code>tetemzzaqyqcmmshhswq</code>, plan gratuito, región <code>us-west-1</code>)</td>
+</tr>
+<tr>
+<td><code>VITE_SUPABASE_URL</code></td>
+<td><code>https://elsgbeupmvsqwkdiineb.supabase.co</code></td>
+<td><code>https://tetemzzaqyqcmmshhswq.supabase.co</code></td>
+</tr>
+<tr>
+<td><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></td>
+<td><code>sb_publishable_ZZoJgR0cAw1c6tLQxNf9_w_-_WD48GS</code></td>
+<td><code>sb_publishable__3ICTuUDxq-1p0SEaxJuvg_b_EWBLw6</code></td>
+</tr>
+<tr>
+<td>Clínicas iniciales</td>
+<td>Clínica MCVD, Demo MCVD (+ las aprobadas)</td>
+<td>Clínica Pruebas, Demo Pruebas</td>
+</tr>
+<tr>
+<td>Datos</td>
+<td>Reales</td>
+<td>De prueba; se pueden borrar</td>
+</tr>
+</tbody></table></div>
+<p>El proyecto de pruebas tiene las mismas migraciones (<code>supabase/migrations/</code>) y las mismas Edge Functions (<code>clinic-signup</code>, <code>clinic-approval</code>) que producción, aplicadas el 2026-11-18.</p>
+<p><strong>Configuración en Vercel (una sola vez):</strong> <em>Settings → Environment Variables</em>, agregar las dos variables de la columna <em>Pruebas</em> con <strong>Environment = Preview</strong> y <strong>rama <code>staging</code></strong>. Las variables de producción quedan en <em>Production</em>. Después de cambiarlas, hacer <strong>Redeploy</strong> del deployment de <code>staging</code>.</p>
+<p><strong>Secretos de las Edge Functions en pruebas:</strong> <code>RESEND_API_KEY</code> se configura aparte en el proyecto de pruebas (<em>Edge Functions → Secrets</em>). Sin ella, las solicitudes se guardan pero no llega correo.</p>
+<p><strong>Usuarios de pruebas:</strong> se crean en el proyecto de pruebas (<em>Authentication → Users → Add user</em>, con <em>Auto Confirm User</em>) y se asignan con el mismo SQL de §12.1 usando los ids de las clínicas de pruebas, o registrándose con <strong>Solicita acceso</strong> en la app de pruebas.</p>
+<h4 id="t-flujo-de-trabajo">Flujo de trabajo</h4>
+<ol>
+<li><strong>Código:</strong> subir los cambios a <code>staging</code> (directo o con un pull request hacia <code>staging</code>). Vercel publica la versión de pruebas sola.</li>
+<li><strong>Base de datos:</strong> si el cambio trae una migración nueva, aplicarla <strong>primero en el proyecto de pruebas</strong> (SQL Editor o Claude Code por MCP). Lo mismo con Edge Functions nuevas o modificadas.</li>
+<li><strong>Probar</strong> en la app de pruebas.</li>
+<li><strong>Pasar a producción:</strong> aplicar la misma migración / función en <strong>CliniPlus Project</strong> y fusionar <code>staging</code> → <code>main</code> con un pull request. Vercel publica producción.</li>
+<li><strong>Sincronizar:</strong> si <code>main</code> recibe cambios que no pasaron por <code>staging</code> (por ejemplo un arreglo urgente), traerlos a <code>staging</code> con un pull request <code>main</code> → <code>staging</code>. <strong><code>staging</code> no se actualiza sola.</strong></li>
+</ol>
+<p>Reglas:</p>
+<ul>
+<li>Nunca poner las variables de producción en <em>Preview</em> sin rama, ni las de pruebas en <em>Production</em>.</li>
+<li>Los usuarios, clínicas y solicitudes de un ambiente no existen en el otro.</li>
+<li>El ambiente de pruebas no tiene copia de los datos reales. No copiar datos de pacientes reales a pruebas.</li>
+</ul>
 <hr>
 <h2 id="t-12-operacion-usuarios-clinicas-y-migraciones">12. Operación: usuarios, clínicas y migraciones</h2>
 <p>Estas tareas se hacen en el panel de Supabase (<strong>SQL Editor</strong> para el SQL) o pidiéndoselas a Claude Code, que tiene acceso por MCP (ver §13).</p>
@@ -1382,6 +1452,7 @@ from public.clinic_data where clinic_id = '6736ae2a-6ab1-4ef4-9e52-876258092f19'
 <p>Exportar el resultado a CSV/JSON desde el SQL Editor.</p>
 <h3 id="t-127-cambios-de-esquema">12.7 Cambios de esquema</h3>
 <ul>
+<li>Probar primero en el ambiente de pruebas (§11.5).</li>
 <li>Cada cambio va en un archivo nuevo en <code>supabase/migrations/</code> con prefijo de fecha <code>YYYYMMDDHHMMSS_descripcion.sql</code>, y se aplica en el proyecto (SQL Editor, CLI de Supabase o Claude Code por MCP).</li>
 <li>Toda tabla nueva en <code>public</code> debe tener RLS activado y políticas antes de usarse.</li>
 <li>Después de cada cambio, revisar <em>Advisors → Security</em> en Supabase.</li>
@@ -1502,7 +1573,7 @@ where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
 <h3 id="t-143-calidad">14.3 Calidad</h3>
 <ol start="14">
 <li><strong>Sin pruebas automatizadas</strong> de frontend; solo <code>lint</code> y <code>build</code>. Las pruebas de RLS de §6.3 se ejecutaron a mano.</li>
-<li><strong>Sin entorno de staging:</strong> desarrollo y producción usan la misma base.</li>
+<li><strong>Ambiente de pruebas manual:</strong> existe (§11.5), pero las migraciones y funciones se aplican a mano en cada proyecto y <code>staging</code> hay que sincronizarla con <code>main</code> a mano.</li>
 <li><strong>Estilos mezclados</strong> (CSS global, inline y Tailwind) y <strong>dos librerías de PDF</strong>.</li>
 </ol>
 <hr>
@@ -1514,7 +1585,7 @@ where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
 <li><strong>Recuperación de contraseña</strong> en la pantalla de login (<code>supabase.auth.resetPasswordForEmail</code>).</li>
 <li><strong>Archivos a Supabase Storage</strong> (firmas, imágenes de estudios, PDFs) con políticas por clínica.</li>
 <li><strong>Normalizar pacientes y citas</strong> en tablas propias (hay una propuesta completa, con roles por clínica, auditoría y Storage, en <a href="https://github.com/lemarealejandro/MCVD/blob/claude/compassionate-hamilton-iuz1kp/docs/backend-normalizado-propuesta/LEEME.md" target="_blank" rel="noopener"><code>docs/backend-normalizado-propuesta/</code></a>; no está aplicada) cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.</li>
-<li><strong>Proyecto de staging</strong> en Supabase (o <em>branching</em>) para probar migraciones antes de producción.</li>
+<li><strong>Automatizar el ambiente de pruebas</strong> (§11.5): aplicar migraciones y desplegar funciones desde GitHub Actions al subir a <code>staging</code> y a <code>main</code>.</li>
 <li><strong>Pruebas automatizadas</strong> de aislamiento entre clínicas (RLS) en CI.</li>
 <li>Revisión legal de cumplimiento para datos de salud (ficha clínica, protección de datos personales, contrato de encargo de tratamiento con los proveedores: Supabase, Vercel, EmailJS).</li>
 </ol>
