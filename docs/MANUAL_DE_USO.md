@@ -308,6 +308,18 @@ Una clínica nueva puede pedir acceso sola desde **Solicita acceso** en la panta
 
 Al aprobar se crea la clínica vacía y la persona ya puede entrar con su correo y la contraseña que eligió. No reenvíes el correo: el enlace permite aprobar la clínica.
 
+### 13.8 Panel de administración
+
+Con tu cuenta de administrador entras a **Administración de la plataforma** (`/plataforma`) al iniciar sesión. Ahí puedes:
+
+- Ver cuántas **solicitudes pendientes**, **clínicas** y **usuarios** hay.
+- **Aprobar** o **Rechazar** solicitudes sin depender del correo. Usa **Pendientes / Todas** para filtrar y el botón de actualizar para ver las nuevas.
+- Ver la lista de **clínicas** con sus usuarios, su rol y su último ingreso.
+
+El panel **no muestra pacientes ni datos clínicos** de las clínicas. Al aprobar, el sistema no le envía correo a la persona: avísale tú.
+
+Si además perteneces a una clínica, entras a tu clínica y verás **Administración** al final del menú lateral.
+
 ---
 
 ## 14. Preguntas frecuentes y problemas

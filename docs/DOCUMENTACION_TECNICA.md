@@ -379,6 +379,9 @@ Rutas en `src/App.jsx`. Las páginas se cargan de forma diferida (`lazy`).
 | `/admin/convenios` | Convenios | `pages/admin/Convenios.jsx` | `clinicplus_convenios` |
 | `/admin/liquidaciones` | Profesionales y liquidaciones | `pages/admin/Liquidaciones.jsx` | `clinicplus_profesionales`, `clinicplus_liquidaciones` |
 | `/admin/settings` | Configuración | `pages/admin/Settings.jsx` | `clinicplus_settings` |
+| `/registro` | Solicitud de alta de clínica (pública) | `pages/Registro.jsx` | Edge Function `clinic-signup` |
+| `/aprobar-clinica?id=…&token=…` | Revisión de una solicitud desde el correo | `pages/AprobarClinica.jsx` | Edge Function `clinic-approval` |
+| `/plataforma` | Panel del administrador de la plataforma | `pages/Plataforma.jsx` | `admin_overview()`, `admin_review_clinic_request()` |
 | `/paciente/ficha/:patientId?c=<clinic_id>` | Formulario del paciente (público) | `pages/PatientSelfForm.jsx` | INSERT en `patient_form_submissions` |
 | `*` | Redirige a `/login` | `App.jsx` | — |
 
@@ -608,6 +611,39 @@ Aprobar a mano (SQL Editor):
 select public.approve_clinic_request('<id de la solicitud>');
 ```
 
+### 12.9 Panel de administración de la plataforma
+
+Ruta `/plataforma`. Lo usan los **administradores de la plataforma** (tabla `platform_admins`), que no necesitan pertenecer a una clínica.
+
+- **Login:** `login()` comprueba también `platform_admins`. Si el usuario es administrador y no tiene clínica, entra directo a `/plataforma`. Si además tiene clínica, entra a su clínica y ve el enlace **Administración** en el menú lateral.
+- **Qué muestra:** contadores (solicitudes pendientes, clínicas, usuarios), las solicitudes con botones **Aprobar / Rechazar** y la lista de clínicas con sus usuarios (rol y último ingreso) y la fecha de la última modificación de datos.
+- **Qué NO muestra:** pacientes ni ningún dato clínico. El administrador no es miembro de las clínicas y RLS le impide leer `clinic_data` y `patient_form_submissions`.
+
+Base de datos (migración `20261118180000_platform_admins.sql`):
+
+| Objeto | Descripción |
+|---|---|
+| `public.platform_admins(user_id, created_at)` | Administradores. RLS: cada usuario solo puede ver su propia fila |
+| `private.is_platform_admin()` | `security definer`: ¿el usuario actual es administrador? |
+| `public.admin_overview()` | Devuelve `{ requests, clinics }` en JSON. Rechaza (`42501`) a quien no sea administrador |
+| `public.admin_review_clinic_request(req_id, decision)` | `decision` = `approve` o `reject`. Rechaza a quien no sea administrador; no revisa dos veces la misma solicitud |
+
+El asesor de Supabase avisa que estas dos funciones son `security definer` ejecutables por `authenticated`: es intencional, porque ambas comprueban `is_platform_admin()` antes de hacer nada. Se probaron 10 casos (usuario normal, administrador y anónimo) el 2026-11-18.
+
+Al aprobar desde el panel **no se envía correo** al solicitante (igual que desde el enlace del correo sin dominio propio en Resend): hay que avisarle.
+
+**Dar o quitar el rol de administrador** (SQL Editor):
+
+```sql
+insert into public.platform_admins (user_id)
+select id from auth.users where email = 'persona@ejemplo.com';
+```
+
+```sql
+delete from public.platform_admins
+where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
+```
+
 ---
 
 ## 13. Herramientas para Claude Code
@@ -633,7 +669,7 @@ select public.approve_clinic_request('<id de la solicitud>');
 
 8. **Sin pantalla para fichas de pacientes recibidas** (se ven en Supabase, §12.5).
 9. **Sin "olvidé mi contraseña"** en la app. Las clínicas nuevas se registran solas con aprobación (§12.8), pero agregar más personas a una clínica existente sigue siendo manual (§12.1).
-10. **Roles sin efecto:** `owner` y `staff` tienen los mismos permisos.
+10. **Roles sin efecto dentro de la clínica:** `owner` y `staff` tienen los mismos permisos. El único rol distinto es el de administrador de la plataforma (§12.9).
 11. **Un usuario = una clínica activa** (sin selector).
 12. **Link de pago simulado** (§9.4).
 13. **Enlaces de formulario antiguos** (sin `?c=`) no permiten enviar.
