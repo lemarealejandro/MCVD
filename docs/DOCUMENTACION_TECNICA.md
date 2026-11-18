@@ -577,7 +577,7 @@ Flujo:
    - valida los datos (contraseña de 8 a 72 caracteres) y limita a 20 solicitudes por hora;
    - crea el usuario en Supabase Auth con su contraseña (`email_confirm: true`, porque la aprobación manual reemplaza la confirmación de correo);
    - guarda la fila en **`clinic_requests`** con `status = 'pending'` y el **sha256** de un código aleatorio de 64 caracteres;
-   - envía un correo a `ADMIN_EMAIL` (por defecto lemare.alejandro@gmail.com) con el enlace `APP_URL/aprobar-clinica?id=…&token=…`.
+   - envía un correo a `ADMIN_EMAIL` (por defecto lemarealejandro@gmail.com) con el enlace `APP_URL/aprobar-clinica?id=…&token=…`.
 3. El administrador abre el enlace. La página `/aprobar-clinica` llama a la Edge Function **`clinic-approval`** (`view`, `approve` o `reject`), que comprueba el código contra el hash (comparación en tiempo constante, vence a los 30 días).
 4. Al aprobar, la función SQL `public.approve_clinic_request(id)` crea la clínica (`demo_data = false`), asigna al usuario como `owner` y marca la solicitud `approved`, todo en una transacción.
 5. Desde ese momento la persona entra en `/login` con su correo y contraseña. Antes de la aprobación el login muestra "pendiente de aprobación".
