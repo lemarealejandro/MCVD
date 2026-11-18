@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { Lock, User } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
 import { isAuthenticated, login } from '../utils/auth';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -16,7 +16,7 @@ const Login = () => {
     e.preventDefault();
     setSubmitting(true);
     setError('');
-    const result = await login(username, password);
+    const result = await login(email, password);
     setSubmitting(false);
     if (result.success) {
       navigate(destination, { replace: true });
@@ -40,15 +40,16 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="login-form">
           <div className="input-group">
-            <label htmlFor="username">Usuario</label>
+            <label htmlFor="email">Correo</label>
             <div className="input-wrapper">
-              <User size={20} className="input-icon" />
+              <Mail size={20} className="input-icon" />
               <input
-                type="text"
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Nombre de usuario"
+                type="email"
+                id="email"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="tu@correo.com"
                 required
               />
             </div>
@@ -61,6 +62,7 @@ const Login = () => {
               <input
                 type="password"
                 id="password"
+                autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Contraseña"

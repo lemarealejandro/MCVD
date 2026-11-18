@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { CheckCircle, User, Heart, AlertCircle, Activity, ChevronRight, ChevronLeft } from 'lucide-react';
 
 // This is a PUBLIC page (no auth required) for patients to pre-fill their clinical history
@@ -15,7 +17,12 @@ const HABITOS = ['Tabaquismo', 'Alcoholismo', 'Bruxismo', 'Onicofagia', 'Respira
 
 const PatientSelfForm = () => {
   const [step, setStep] = useState(0);
+  const { patientId } = useParams();
+  const [searchParams] = useSearchParams();
+  const clinicId = searchParams.get('c');
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState('');
   const [form, setForm] = useState({
     name: '', rut: '', dob: '', gender: '', phone: '', email: '', address: '',
     emergencyContact: '', emergencyPhone: '',
@@ -31,11 +38,20 @@ const PatientSelfForm = () => {
     set('habitos', cur.includes(h) ? cur.filter(x => x !== h) : [...cur, h]);
   };
 
-  const handleSubmit = () => {
-    // In a real app, this would POST to an API
-    // For now we store in localStorage so admin can see it
-    const key = `patient_form_${Date.now()}`;
-    localStorage.setItem(key, JSON.stringify({ ...form, submittedAt: new Date().toISOString() }));
+  const handleSubmit = async () => {
+    setSending(true);
+    setSendError('');
+    const { error } = await supabase.from('patient_form_submissions').insert({
+      clinic_id: clinicId,
+      patient_ref: patientId ?? null,
+      data: form,
+    });
+    setSending(false);
+    if (error) {
+      console.error('No se pudo enviar la ficha:', error);
+      setSendError('No pudimos enviar tus datos. Revisa tu conexión e inténtalo de nuevo.');
+      return;
+    }
     setSubmitted(true);
   };
 
@@ -45,8 +61,8 @@ const PatientSelfForm = () => {
         <div className="spf-done-card">
           <div className="spf-done-icon"><CheckCircle size={60} /></div>
           <h2>¡Información guardada!</h2>
-          <p>Gracias <strong>{form.name}</strong>. Tus datos quedaron guardados en este dispositivo.</p>
-          <p>Por ahora la clínica no los recibe automáticamente: confírmalos en recepción el día de tu consulta.</p>
+          <p>Gracias <strong>{form.name}</strong>. Tus datos fueron enviados a la clínica.</p>
+          <p>Los revisaremos antes de tu consulta.</p>
         </div>
         <style>{`
           .spf-done { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); padding: 1rem; }
@@ -209,6 +225,11 @@ const PatientSelfForm = () => {
           </div>
         )}
 
+        {!clinicId && (
+          <p className="spf-error" role="alert">Este enlace está incompleto. Pide a la clínica que te envíe uno nuevo.</p>
+        )}
+        {sendError && <p className="spf-error" role="alert">{sendError}</p>}
+
         {/* Navigation */}
         <div className="spf-nav">
           {step > 0 && (
@@ -229,9 +250,9 @@ const PatientSelfForm = () => {
             <button
               className="spf-btn spf-btn-submit"
               onClick={handleSubmit}
-              disabled={!form.motivoConsulta}
+              disabled={!form.motivoConsulta || !clinicId || sending}
             >
-              <CheckCircle size={18} /> Guardar Historia Clínica
+              <CheckCircle size={18} /> {sending ? 'Enviando...' : 'Enviar Historia Clínica'}
             </button>
           )}
         </div>
@@ -274,6 +295,7 @@ const PatientSelfForm = () => {
         .spf-pain-val { font-size: 1.25rem; font-weight: 800; color: #2563eb; width: 32px; text-align: center; }
         .spf-checkbox-label { display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer; }
         .spf-nav { display: flex; align-items: center; }
+        .spf-error { color: #b91c1c; background: #fef2f2; border: 1px solid #fecaca; border-radius: 10px; padding: 0.75rem 1rem; margin-top: 1rem; }
         .spf-btn { display: flex; align-items: center; gap: 0.5rem; padding: 0.85rem 1.5rem; border-radius: 12px; border: none; font-size: 1rem; font-weight: 700; cursor: pointer; font-family: inherit; transition: all 0.2s; }
         .spf-btn-back { background: #f3f4f6; color: #374151; }
         .spf-btn-back:hover { background: #e5e7eb; }
