@@ -1,9 +1,9 @@
 import React, { Suspense, useState } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { Calendar, Package, LogOut, Settings, LayoutDashboard, Users, Image, FileText, Menu, X, BarChart3, Building2, Receipt, FlaskConical, Handshake, Wallet } from 'lucide-react';
+import { Calendar, Package, LogOut, Settings, LayoutDashboard, Users, Image, FileText, Menu, X, BarChart3, Building2, Receipt, FlaskConical, Handshake, Wallet, ShieldCheck } from 'lucide-react';
 import { createInitialAppointments, initialEstudios, initialInventory, initialPatients } from '../../data/mockData';
 import { usePersistentState } from '../../utils/usePersistentState';
-import { isSetupAccount, logout } from '../../utils/auth';
+import { isPlatformAdmin, isSetupAccount, logout } from '../../utils/auth';
 import SectionCoachmark from './SectionCoachmark';
 
 const AdminLayout = () => {
@@ -38,6 +38,8 @@ const AdminLayout = () => {
     { path: '/admin/convenios', icon: <Handshake size={20} />, label: 'Convenios' },
     { path: '/admin/liquidaciones', icon: <Wallet size={20} />, label: 'Liquidaciones' },
     { path: '/admin/settings', icon: <Settings size={20} />, label: 'Configuración' },
+    // Solo para administradores de la plataforma que además trabajan en una clínica.
+    ...(isPlatformAdmin() ? [{ path: '/plataforma', icon: <ShieldCheck size={20} />, label: 'Administración' }] : []),
   ];
 
   return (

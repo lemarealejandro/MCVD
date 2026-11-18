@@ -1,0 +1,74 @@
+/* Panel de administración de la plataforma */
+.pf { min-height: 100vh; background: var(--bg-secondary); color: var(--text-primary); }
+.pf-top { display: flex; flex-wrap: wrap; gap: 0.75rem 1.5rem; align-items: center; justify-content: space-between; padding: 0.9rem max(1rem, env(safe-area-inset-left, 0px)); background: var(--bg-primary); border-bottom: 1px solid var(--border-color); }
+.pf-brand { display: flex; align-items: center; gap: 0.75rem; color: var(--accent-color); }
+.pf-brand div { display: flex; flex-direction: column; }
+.pf-brand strong { color: var(--text-primary); font-size: 1.05rem; }
+.pf-brand span { color: var(--text-secondary); font-size: 0.85rem; overflow-wrap: anywhere; }
+.pf-top-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+.pf-main { max-width: 1100px; margin: 0 auto; padding: 1.5rem 1rem 3rem; display: flex; flex-direction: column; gap: 1.25rem; }
+
+.pf-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem; }
+.pf-stat { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 0.6rem; align-items: center; background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem 1rem; color: var(--text-secondary); font-size: 0.9rem; }
+.pf-stat svg { grid-row: 1 / 3; }
+.pf-stat-num { font-size: 1.6rem; font-weight: 700; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pf-stat.attention { border-color: #f59e0b; background: #fffbeb; }
+.pf-stat.attention svg { color: #b45309; }
+
+.pf-card { background: var(--bg-primary); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 1.1rem 1.25rem; min-width: 0; }
+.pf-card-head { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; justify-content: space-between; margin-bottom: 0.75rem; }
+.pf-card-head h2 { font-size: 1.1rem; margin: 0; }
+.pf-head-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+.pf-seg { display: flex; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 8px; padding: 3px; }
+.pf-seg button { border: 0; background: transparent; padding: 0.35rem 0.8rem; border-radius: 6px; font: inherit; font-size: 0.88rem; color: var(--text-secondary); cursor: pointer; }
+.pf-seg button[aria-selected="true"] { background: var(--bg-primary); color: var(--text-primary); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,0.08); }
+
+.pf-btn { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.5rem 0.9rem; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-primary); font: inherit; font-size: 0.9rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+.pf-btn:hover:not(:disabled) { background: var(--bg-secondary); }
+.pf-btn:disabled { opacity: 0.6; cursor: default; }
+.pf-btn.primary { background: var(--accent-color); border-color: var(--accent-color); color: #fff; }
+.pf-btn.primary:hover:not(:disabled) { filter: brightness(0.95); background: var(--accent-color); }
+.pf-btn.danger { border-color: #dc2626; color: #dc2626; }
+.pf-btn.danger:hover:not(:disabled) { background: #fef2f2; }
+.pf-icon-btn { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-primary); color: var(--text-secondary); cursor: pointer; }
+.pf-icon-btn .spin { animation: pf-spin 1s linear infinite; }
+@keyframes pf-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .pf-icon-btn .spin { animation: none; } }
+
+.pf-msg { margin: 0; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.95rem; }
+.pf-msg.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+.pf-msg.ok { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+.pf-empty { color: var(--text-secondary); margin: 0.25rem 0 0.5rem; }
+.pf-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.75rem; }
+.pf-req { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between; align-items: flex-start; border: 1px solid var(--border-color); border-left: 4px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem 1rem; }
+.pf-req.pending { border-left-color: #f59e0b; }
+.pf-req.approved { border-left-color: #16a34a; }
+.pf-req.rejected { border-left-color: #dc2626; }
+.pf-req-info { flex: 1 1 320px; min-width: 0; }
+.pf-req-title { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; }
+.pf-req-title strong { font-size: 1.02rem; }
+.pf-req dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.35rem 1rem; margin: 0; }
+.pf-req dt { font-size: 0.78rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.pf-req dd { margin: 0; font-size: 0.93rem; overflow-wrap: anywhere; }
+.pf-req-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+.pf-confirm { font-size: 0.9rem; color: var(--text-secondary); }
+
+.pf-pill { display: inline-block; padding: 0.1rem 0.55rem; border-radius: 999px; font-size: 0.78rem; font-weight: 600; margin-left: 0.4rem; }
+.pf-req-title .pf-pill { margin-left: 0; }
+.pf-pill.pending { background: #fef3c7; color: #92400e; }
+.pf-pill.approved { background: #dcfce7; color: #166534; }
+.pf-pill.rejected { background: #fee2e2; color: #991b1b; }
+.pf-pill.demo { background: #e0e7ff; color: #3730a3; }
+
+.pf-table-wrap { overflow-x: auto; }
+.pf-table { width: 100%; border-collapse: collapse; font-size: 0.92rem; }
+.pf-table th { text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-secondary); font-weight: 600; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color); white-space: nowrap; }
+.pf-table td { padding: 0.7rem 0.75rem; border-bottom: 1px solid var(--border-color); vertical-align: top; }
+.pf-table tr:last-child td { border-bottom: 0; }
+.pf-members { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.pf-muted { color: var(--text-secondary); font-size: 0.85rem; }
+.pf-nowrap { white-space: nowrap; }
+.pf-foot { color: var(--text-secondary); font-size: 0.85rem; text-align: center; margin: 0; }

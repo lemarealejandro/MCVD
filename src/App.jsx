@@ -2,7 +2,7 @@ import React, { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import Login from './pages/Login'
 import AdminLayout from './components/layout/AdminLayout'
-import { isAuthenticated } from './utils/auth'
+import { isAuthenticated, isPlatformAdmin } from './utils/auth'
 
 const Dashboard = lazy(() => import('./pages/admin/Dashboard'))
 const Agenda = lazy(() => import('./pages/admin/Agenda'))
@@ -25,10 +25,16 @@ const Plantillas = lazy(() => import('./pages/Imagenologia/Plantillas'))
 const PatientSelfForm = lazy(() => import('./pages/PatientSelfForm'))
 const Registro = lazy(() => import('./pages/Registro'))
 const AprobarClinica = lazy(() => import('./pages/AprobarClinica'))
+const Plataforma = lazy(() => import('./pages/Plataforma'))
 
 const RequireAuth = ({ children }) => {
   const location = useLocation()
   if (!isAuthenticated()) return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  return children
+}
+
+const RequirePlatformAdmin = ({ children }) => {
+  if (!isPlatformAdmin()) return <Navigate to="/login" replace state={{ from: '/plataforma' }} />
   return children
 }
 
@@ -40,6 +46,7 @@ function App() {
       <Route path="/login" element={<Login />} />
       <Route path="/registro" element={<Registro />} />
       <Route path="/aprobar-clinica" element={<AprobarClinica />} />
+      <Route path="/plataforma" element={<RequirePlatformAdmin><Plataforma /></RequirePlatformAdmin>} />
       
       <Route path="/admin" element={<RequireAuth><AdminLayout /></RequireAuth>}>
         <Route index element={<Dashboard />} />
