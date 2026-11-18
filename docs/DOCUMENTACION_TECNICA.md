@@ -690,7 +690,7 @@ En orden de impacto:
 2. **Aviso visible de errores de guardado** y estado "guardando / guardado".
 3. **Recuperación de contraseña** en la pantalla de login (`supabase.auth.resetPasswordForEmail`).
 4. **Archivos a Supabase Storage** (firmas, imágenes de estudios, PDFs) con políticas por clínica.
-5. **Normalizar pacientes y citas** en tablas propias cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.
+5. **Normalizar pacientes y citas** en tablas propias (hay una propuesta completa, con roles por clínica, auditoría y Storage, en [`docs/backend-normalizado-propuesta/`](../docs/backend-normalizado-propuesta/LEEME.md); no está aplicada) cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.
 6. **Proyecto de staging** en Supabase (o *branching*) para probar migraciones antes de producción.
 7. **Pruebas automatizadas** de aislamiento entre clínicas (RLS) en CI.
 8. Revisión legal de cumplimiento para datos de salud (ficha clínica, protección de datos personales, contrato de encargo de tratamiento con los proveedores: Supabase, Vercel, EmailJS).

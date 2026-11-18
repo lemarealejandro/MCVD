@@ -1,0 +1,1587 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Documentación ClinicPlus MCVD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra superior con dos documentos; índice lateral fijo + columna de lectura de ~70ch. */
+:root {
+  --bg: #f4f7f8;          /* porcelana fría */
+  --surface: #ffffff;
+  --ink: #13232b;
+  --muted: #55666f;
+  --line: #d9e2e5;
+  --accent: #0b6f78;      /* verde azulado clínico */
+  --accent-soft: #e2f1f2;
+  --warn-bg: #fff5e0;
+  --warn-ink: #7a4a00;
+  --warn-line: #f0c46c;
+  --code-bg: #0f1d23;
+  --code-ink: #dbe7ea;
+  --font-display: "Manrope", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --side: max(16px, env(safe-area-inset-left, 0px));
+  --side-r: max(16px, env(safe-area-inset-right, 0px));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d171b; --surface: #132127; --ink: #e3ecee; --muted: #9db0b6; --line: #24363d;
+    --accent: #4fc3c9; --accent-soft: #163339; --warn-bg: #2e2412; --warn-ink: #f3cf8a; --warn-line: #6d5223;
+    --code-bg: #081013; --code-ink: #d6e4e7; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d171b; --surface: #132127; --ink: #e3ecee; --muted: #9db0b6; --line: #24363d;
+  --accent: #4fc3c9; --accent-soft: #163339; --warn-bg: #2e2412; --warn-ink: #f3cf8a; --warn-line: #6d5223;
+  --code-bg: #081013; --code-ink: #d6e4e7; color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 84px); }
+body { background: var(--bg); color: var(--ink); font: 400 17px/1.6 var(--font-body); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--surface); }
+a { color: var(--accent); text-underline-offset: 2px; overflow-wrap: anywhere; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* Barra superior */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--surface); border-bottom: 1px solid var(--line); }
+.topbar-inner { max-width: 1240px; margin: 0 auto; padding-block: 12px; padding-left: var(--side); padding-right: var(--side-r); display: flex; flex-wrap: wrap; align-items: center; gap: 12px 28px; }
+.brand { display: flex; align-items: baseline; gap: 10px; font-family: var(--font-display); }
+.brand b { font-size: 20px; font-weight: 800; letter-spacing: -0.01em; }
+.brand b span { color: var(--accent); }
+.brand small { color: var(--muted); font: 600 12px var(--font-body); letter-spacing: 0.08em; text-transform: uppercase; }
+.tabs { display: flex; gap: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 4px; }
+.tab { font: 700 14px var(--font-display); color: var(--muted); text-decoration: none; padding: 7px 14px; border-radius: 7px; }
+.tab[aria-current="page"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgb(0 0 0 / 0.08); }
+.updated { margin-left: auto; color: var(--muted); font-size: 13px; }
+
+/* Cuerpo */
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 32px 80px; padding-left: var(--side); padding-right: var(--side-r); display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 48px; }
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 84px); align-self: start; max-height: calc(100vh - 110px); overflow-y: auto; }
+.toc h2 { font: 700 12px var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 0 0 10px; }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.toc a { display: grid; grid-template-columns: 26px 1fr; gap: 4px; padding: 6px 8px; border-radius: 6px; text-decoration: none; color: var(--ink); font-size: 15px; line-height: 1.35; }
+.toc a:hover { background: var(--accent-soft); }
+.toc a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.toc .n { color: var(--muted); font: 500 12px/1.9 var(--font-mono); font-variant-numeric: tabular-nums; }
+.toc a.active .n { color: var(--accent); }
+
+.doc { min-width: 0; max-width: 78ch; }
+.doc-head { padding-bottom: 20px; margin-bottom: 8px; border-bottom: 1px solid var(--line); }
+.eyebrow { font: 700 12px var(--font-body); letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+.doc-head h1 { font: 800 clamp(28px, 4vw, 40px)/1.15 var(--font-display); letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+
+.doc h2 { font: 800 26px/1.25 var(--font-display); letter-spacing: -0.01em; margin: 56px 0 12px; padding-top: 20px; border-top: 1px solid var(--line); text-wrap: balance; }
+.doc h2:first-of-type { border-top: 0; margin-top: 28px; padding-top: 0; }
+.doc h3 { font: 700 19px/1.3 var(--font-display); margin: 32px 0 8px; }
+.doc h4 { font: 700 16px/1.3 var(--font-display); margin: 24px 0 6px; }
+.doc p, .doc ul, .doc ol { margin: 0 0 14px; }
+.doc ul, .doc ol { padding-left: 22px; }
+.doc li { margin: 4px 0; }
+.doc li > ul, .doc li > ol { margin: 4px 0 0; }
+.doc hr { display: none; }
+.doc strong { font-weight: 700; }
+.doc :not(pre) > code { font: 500 0.84em var(--font-mono); background: var(--accent-soft); color: var(--ink); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+
+.note { border: 1px solid var(--line); border-left: 4px solid var(--accent); background: var(--surface); padding: 12px 16px; border-radius: 8px; }
+.note.warn { border-color: var(--warn-line); border-left-color: var(--warn-line); background: var(--warn-bg); color: var(--warn-ink); }
+.note.warn strong { color: inherit; }
+.note.warn::before { content: "Atención · "; font-weight: 700; }
+.doc > p:first-of-type { color: var(--muted); }
+
+.table-wrap { overflow-x: auto; margin: 4px 0 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.45; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+th { font: 700 13px var(--font-body); letter-spacing: 0.03em; color: var(--muted); background: var(--bg); white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+
+.code { margin: 4px 0 20px; border-radius: 8px; overflow: hidden; background: var(--code-bg); }
+.code-bar { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px 6px 14px; font: 500 12px var(--font-mono); color: #8fa6ad; border-bottom: 1px solid rgb(255 255 255 / 0.07); }
+.copy { font: 600 12px var(--font-body); color: var(--code-ink); background: rgb(255 255 255 / 0.08); border: 1px solid rgb(255 255 255 / 0.12); border-radius: 6px; padding: 4px 10px; cursor: pointer; }
+.copy:hover { background: rgb(255 255 255 / 0.16); }
+.code pre { margin: 0; padding: 14px; overflow-x: auto; }
+.code code { font: 400 13.5px/1.6 var(--font-mono); color: var(--code-ink); }
+
+@media (max-width: 900px) {
+  .wrap { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 20px; }
+  .toc { position: static; max-height: none; border: 1px solid var(--line); background: var(--surface); border-radius: 10px; padding: 14px; }
+  .toc ol { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+  .updated { display: none; }
+  body { font-size: 16px; }
+}
+
+</style>
+</head>
+<body style="margin:0">
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><b>Clinic<span>Plus</span></b><small>MCVD · Documentación</small></div>
+    <nav class="tabs" aria-label="Documentos">
+      <a class="tab" href="#manual" data-doc="manual">Manual de uso</a>
+      <a class="tab" href="#tecnica" data-doc="tecnica">Documentación técnica</a>
+    </nav>
+    <span class="updated">Actualizado el 18 nov 2026</span>
+  </div>
+</header>
+
+<div class="wrap" data-view="manual">
+  <aside class="toc" aria-label="Índice del manual"><h2>Contenido</h2><ol><li><a href="#m-1-antes-de-empezar"><span class="n">1</span><span>Antes de empezar</span></a></li><li><a href="#m-2-entrar-y-salir"><span class="n">2</span><span>Entrar y salir</span></a></li><li><a href="#m-3-como-se-guardan-los-datos"><span class="n">3</span><span>Cómo se guardan los datos</span></a></li><li><a href="#m-4-dashboard"><span class="n">4</span><span>Dashboard</span></a></li><li><a href="#m-5-agenda"><span class="n">5</span><span>Agenda</span></a></li><li><a href="#m-6-pacientes-y-ficha-clinica"><span class="n">6</span><span>Pacientes y ficha clínica</span></a></li><li><a href="#m-7-formulario-que-llena-el-paciente"><span class="n">7</span><span>Formulario que llena el paciente</span></a></li><li><a href="#m-8-inventario"><span class="n">8</span><span>Inventario</span></a></li><li><a href="#m-9-imagenologia-e-informes"><span class="n">9</span><span>Imagenología e informes</span></a></li><li><a href="#m-10-gestion-sucursales-gastos-laboratorio-convenios-y-liquidaciones"><span class="n">10</span><span>Gestión: sucursales, gastos, laboratorio, convenios y liquidaciones</span></a></li><li><a href="#m-11-reportes"><span class="n">11</span><span>Reportes</span></a></li><li><a href="#m-12-configuracion"><span class="n">12</span><span>Configuración</span></a></li><li><a href="#m-13-para-el-administrador-usuarios-y-accesos"><span class="n">13</span><span>Para el administrador: usuarios y accesos</span></a></li><li><a href="#m-14-preguntas-frecuentes-y-problemas"><span class="n">14</span><span>Preguntas frecuentes y problemas</span></a></li><li><a href="#m-15-funciones-que-todavia-no-estan-disponibles"><span class="n">15</span><span>Funciones que todavía no están disponibles</span></a></li></ol></aside>
+  <main class="doc" id="manual">
+    <div class="doc-head"><p class="eyebrow">Para el personal de la clínica</p><h1>Manual de uso</h1></div>
+    <p><strong>Actualizado:</strong> 2026-11-18.</p>
+<p><strong>Para quién:</strong> personal de la clínica (recepción, odontólogos, administración) y para quien administre los accesos. La documentación técnica está en <a href="#tecnica"><code>DOCUMENTACION_TECNICA.md</code></a>.</p>
+<hr>
+<h2 id="m-1-antes-de-empezar">1. Antes de empezar</h2>
+<ul>
+<li><p>Se usa desde el navegador (Chrome, Edge, Safari o Firefox actualizados), en computadora o tablet. No hay que instalar nada.</p>
+</li>
+<li><p>Necesitas un <strong>correo y contraseña</strong>. Si tu clínica es nueva, pulsa <strong>Solicita acceso</strong> en la pantalla de inicio de sesión: creas tu contraseña y entras cuando el administrador apruebe la solicitud. Si tu clínica ya existe, pide tu usuario al responsable.</p>
+</li>
+<li><p>Hay dos clínicas configuradas:</p>
+<ul>
+<li><strong>Clínica MCVD:</strong> la clínica real. Empieza vacía.</li>
+<li><strong>Demo MCVD:</strong> trae pacientes, citas e inventario de ejemplo para practicar. <strong>No ingreses datos de pacientes reales aquí.</strong></li>
+</ul>
+<p>La clínica en la que entras depende de tu usuario: lo define el administrador.</p>
+</li>
+</ul>
+<hr>
+<h2 id="m-2-entrar-y-salir">2. Entrar y salir</h2>
+<h3 id="m-entrar">Entrar</h3>
+<ol>
+<li>Abre la dirección de la app.</li>
+<li>Escribe tu <strong>correo</strong> y tu <strong>contraseña</strong>.</li>
+<li>Pulsa <strong>Ingresar</strong>.</li>
+</ol>
+<p>Entrarás a la <strong>Agenda</strong> (o a la página que intentabas abrir).</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Mensaje</th>
+<th>Qué significa</th>
+<th>Qué hacer</th>
+</tr>
+</thead><tbody><tr>
+<td>&quot;Correo o contraseña incorrectos.&quot;</td>
+<td>Algún dato no coincide</td>
+<td>Revisa mayúsculas y que el correo esté bien escrito</td>
+</tr>
+<tr>
+<td>&quot;…está pendiente de aprobación.&quot;</td>
+<td>Registraste tu clínica y aún no la aprueban</td>
+<td>Espera la aprobación</td>
+</tr>
+<tr>
+<td>&quot;Tu usuario no tiene una clínica asignada.&quot;</td>
+<td>Tu cuenta existe pero no está asignada a una clínica</td>
+<td>Pide al administrador que te asigne (§13)</td>
+</tr>
+<tr>
+<td>&quot;No se pudo iniciar sesión: …&quot;</td>
+<td>Problema de conexión u otro error</td>
+<td>Revisa tu internet y vuelve a intentar</td>
+</tr>
+</tbody></table></div>
+<p>La sesión queda abierta en ese navegador aunque lo cierres. <strong>En equipos compartidos, cierra sesión siempre al terminar.</strong></p>
+<h3 id="m-salir">Salir</h3>
+<p>Pulsa <strong>Cerrar sesión</strong> al final del menú lateral.</p>
+<h3 id="m-olvide-mi-contrasena">Olvidé mi contraseña</h3>
+<p>Por ahora la app no tiene ese botón. Pide al administrador que te envíe un correo de recuperación (§13.3).</p>
+<hr>
+<h2 id="m-3-como-se-guardan-los-datos">3. Cómo se guardan los datos</h2>
+<ul>
+<li><strong>Todo se guarda solo y en línea</strong>, sin botón de &quot;guardar general&quot;. Medio segundo después de un cambio, queda guardado en la base de datos de la clínica.</li>
+<li>Puedes entrar desde cualquier equipo con tu usuario y verás los mismos datos.</li>
+<li>Solo las personas de tu clínica ven sus datos.</li>
+<li><strong>Si dos personas editan la misma sección al mismo tiempo</strong>, se queda el último cambio guardado y el de la otra persona puede perderse. Recomendación: que una sola persona edite la agenda a la vez y que cada odontólogo edite solo las fichas de sus pacientes.</li>
+<li><strong>Los cambios de otras personas</strong> se ven al recargar la página (F5) o al volver a entrar a la sección.</li>
+<li><strong>Primera vez con la versión nueva:</strong> si antes usabas la app (cuando los datos se guardaban solo en el navegador), la primera vez que entres a cada sección se suben automáticamente los datos que había en ese equipo. Por eso, <strong>la primera persona en entrar debe hacerlo desde el equipo que tenía los datos reales.</strong></li>
+</ul>
+<hr>
+<h2 id="m-4-dashboard">4. Dashboard</h2>
+<p>Menú: <strong>Dashboard</strong>. Muestra un resumen:</p>
+<ul>
+<li><strong>Pacientes registrados</strong>, <strong>citas de la semana</strong> y <strong>citas del mes</strong>.</li>
+<li><strong>Alertas de inventario:</strong> artículos por debajo del stock mínimo, con el botón <strong>Reponer</strong>, que te lleva al Inventario.</li>
+<li><strong>Generar Link de Pago:</strong> ⚠️ es una demostración. Crea un enlace de ejemplo que <strong>no cobra</strong> y no está conectado a ningún medio de pago. No lo envíes a pacientes.</li>
+</ul>
+<hr>
+<h2 id="m-5-agenda">5. Agenda</h2>
+<p>Menú: <strong>Agenda</strong>.</p>
+<h3 id="m-ver-citas">Ver citas</h3>
+<ul>
+<li>Arriba verás los contadores: <strong>Citas Hoy</strong>, <strong>Esta Semana</strong>, <strong>Pendientes</strong> y <strong>Total</strong>.</li>
+<li>Filtra por estado con <strong>Todos los estados</strong>, o usa el buscador (paciente, servicio…).</li>
+<li>Estados: <strong>Pendiente</strong>, <strong>Confirmada</strong>, <strong>Completada</strong>, <strong>Cancelada</strong>.</li>
+</ul>
+<h3 id="m-crear-una-cita">Crear una cita</h3>
+<ol>
+<li>Pulsa <strong>Nueva Cita</strong>.</li>
+<li>Completa <strong>Paciente</strong>, <strong>Fecha</strong>, <strong>Hora</strong> y <strong>Servicio</strong> (obligatorios), y si quieres doctor/profesional, duración, teléfono, email y notas.</li>
+<li>Pulsa guardar.</li>
+</ol>
+<h3 id="m-ficha-del-paciente-automatica-al-confirmar">Ficha del paciente automática al confirmar</h3>
+<p>Al <strong>confirmar</strong> una cita (en el formulario o cambiando su estado a <strong>Confirmada</strong>), el sistema crea la ficha del paciente o la vincula a una existente:</p>
+<ul>
+<li>Busca primero por <strong>RUT</strong>, sin importar puntos ni guion (<code>15.234.567-8</code> y <code>152345678</code> son el mismo).</li>
+<li>Sin RUT, solo vincula por nombre si hay un único paciente con ese nombre.</li>
+<li>Si la ficha ya existe, solo completa los datos que estaban vacíos; no reemplaza nada.</li>
+</ul>
+<p>Por eso el formulario de la cita pide además <strong>RUT</strong>, <strong>fecha de nacimiento</strong>, <strong>género</strong> y <strong>dirección</strong>.</p>
+<h3 id="m-enviar-confirmacion-por-correo">Enviar confirmación por correo</h3>
+<p>En el formulario de la cita, escribe el <strong>Email del Paciente</strong> y pulsa <strong>Enviar Confirmación</strong>. Verás &quot;Correo enviado exitosamente&quot; si salió bien.</p>
+<h3 id="m-editar-o-eliminar">Editar o eliminar</h3>
+<p>Usa los íconos <strong>Editar</strong> (lápiz) o <strong>Eliminar</strong> (papelera) en la fila de la cita. Para cancelar una cita sin borrarla, edítala y cambia su estado a <strong>Cancelada</strong>.</p>
+<hr>
+<h2 id="m-6-pacientes-y-ficha-clinica">6. Pacientes y ficha clínica</h2>
+<p>Menú: <strong>Pacientes</strong>.</p>
+<h3 id="m-crear-un-paciente">Crear un paciente</h3>
+<p>Usa el buscador para encontrar pacientes por nombre o RUT.</p>
+<ol>
+<li>Pulsa <strong>Nuevo Paciente</strong>.</li>
+<li>Completa <strong>Nombre Completo</strong>, <strong>RUT / Cédula</strong>, teléfono, email, grupo sanguíneo, etc.</li>
+<li>Pulsa <strong>Crear Paciente</strong>.</li>
+</ol>
+<h3 id="m-abrir-la-ficha">Abrir la ficha</h3>
+<p>En la lista, pulsa <strong>Ver Historia</strong> en la fila del paciente. La ficha tiene cinco pestañas:</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Pestaña</th>
+<th>Para qué sirve</th>
+</tr>
+</thead><tbody><tr>
+<td><strong>Historia Clínica</strong></td>
+<td>Datos personales, antecedentes médicos y odontológicos, alergias, medicamentos, hábitos, motivo de consulta</td>
+</tr>
+<tr>
+<td><strong>Odontograma</strong></td>
+<td>Estado de cada pieza dental. Selecciona el diente y la cara (mesial, distal, oclusal, vestibular, lingual/palatino) y marca la condición</td>
+</tr>
+<tr>
+<td><strong>Periodontodiagrama</strong></td>
+<td>Sondaje en 6 puntos por pieza, sangrado, supuración, recesión y movilidad</td>
+</tr>
+<tr>
+<td><strong>Tratamientos</strong></td>
+<td>Historial de tratamientos realizados y presupuesto</td>
+</tr>
+<tr>
+<td><strong>Consentimiento</strong></td>
+<td>Consentimiento informado con <strong>firma digital</strong> del paciente en pantalla (con el dedo o lápiz en tablet, o con el mouse)</td>
+</tr>
+</tbody></table></div>
+<h3 id="m-tratamientos-y-presupuesto">Tratamientos y presupuesto</h3>
+<ol>
+<li>En <strong>Tratamientos</strong>, pulsa <strong>Ir al Catálogo</strong> para ver el <strong>Catálogo Completo de Procedimientos</strong>.</li>
+<li>En cada procedimiento puedes:<ul>
+<li><strong>Agregarlo al historial</strong> (tratamiento realizado): indica diente/zona, fecha, odontólogo y notas clínicas, y pulsa <strong>Guardar Tratamiento</strong>.</li>
+<li><strong>Agregarlo al presupuesto.</strong></li>
+</ul>
+</li>
+<li>En el presupuesto ajusta la <strong>Tasa USD/VES</strong> del día. Verás el total en dólares y en bolívares.</li>
+<li>Pulsa el botón de <strong>PDF</strong> para descargar el presupuesto en formato A4.</li>
+</ol>
+<p class="note warn"><strong>El presupuesto no se guarda:</strong> si sales de la ficha o recargas la página, se pierde. Descarga el PDF antes de salir.</p>
+<h3 id="m-enviar-el-formulario-al-paciente">Enviar el formulario al paciente</h3>
+<p>En la cabecera de la ficha, pulsa <strong>Enviar Formulario</strong>. El paciente recibe un correo con un enlace para llenar su historia desde su celular (ver §7). El paciente debe tener email registrado.</p>
+<hr>
+<h2 id="m-7-formulario-que-llena-el-paciente">7. Formulario que llena el paciente</h2>
+<p>Es una página pública (el paciente <strong>no</strong> necesita usuario). Tiene tres pasos:</p>
+<ol>
+<li><strong>Datos Personales</strong> (nombre, RUT, fecha de nacimiento y teléfono son obligatorios).</li>
+<li><strong>Antecedentes</strong> (alergias, medicamentos, enfermedades crónicas, antecedentes familiares, hábitos).</li>
+<li><strong>Consulta Dental</strong> (motivo de consulta, antecedentes odontológicos, nivel de dolor, sensibilidad).</li>
+</ol>
+<p>Al pulsar <strong>Enviar Historia Clínica</strong>, los datos llegan a la clínica.</p>
+<ul>
+<li>Si el paciente ve <strong>&quot;Este enlace está incompleto&quot;</strong>, el enlace es de antes de la actualización: envíale uno nuevo desde la ficha.</li>
+<li>Si ve <strong>&quot;No pudimos enviar tus datos&quot;</strong>, que revise su conexión e intente de nuevo.</li>
+</ul>
+<p><strong>Dónde ver las fichas recibidas:</strong> por ahora no aparecen dentro de la app. El administrador las consulta en Supabase (§13.5) y las traspasa a la ficha del paciente.</p>
+<hr>
+<h2 id="m-8-inventario">8. Inventario</h2>
+<p>Menú: <strong>Inventario</strong>. Control de insumos, materiales dentales y precios.</p>
+<ul>
+<li><strong>Nuevo Artículo:</strong> nombre, categoría, <strong>Stock actual</strong>, <strong>Stock mínimo</strong> y precio en dólares.</li>
+<li>La columna <strong>Estado</strong> indica si el artículo está <strong>Normal</strong> o bajo el mínimo. Los artículos bajo mínimo aparecen también en el Dashboard.</li>
+<li><strong>Tasa del Día (BCV / Ref):</strong> escribe la tasa y pulsa <strong>Actualizar Tasa</strong>. Los precios se muestran en <strong>$</strong> y <strong>Bs</strong>.</li>
+<li><strong>Conversor Rápido:</strong> convierte montos entre dólares y bolívares con la tasa del día.</li>
+<li>Edita o elimina con los íconos de cada fila.</li>
+</ul>
+<hr>
+<h2 id="m-9-imagenologia-e-informes">9. Imagenología e informes</h2>
+<h3 id="m-estudios">Estudios</h3>
+<p>Menú: <strong>Imagenología</strong>.</p>
+<ol>
+<li>Pulsa <strong>Nuevo Estudio</strong>, elige <strong>Paciente</strong> y <strong>Tipo de estudio</strong>, y pulsa <strong>Crear Estudio</strong>.</li>
+<li>En <strong>Estudios Recientes</strong>, abre un estudio para verlo en el <strong>visor</strong>: <strong>Acercar</strong>, <strong>Alejar</strong>, <strong>Mover</strong>, <strong>Contraste</strong> y <strong>Restablecer</strong>. La herramienta <strong>Medir</strong> está marcada como &quot;próximamente&quot;.</li>
+<li>Para borrar un estudio usa <strong>Eliminar estudio</strong>.</li>
+</ol>
+<h3 id="m-plantillas">Plantillas</h3>
+<p>Pestaña <strong>Plantillas</strong> dentro de Imagenología. <strong>Gestión de Plantillas</strong> de informes: crear, <strong>Renombrar</strong> y <strong>Eliminar</strong>.</p>
+<h3 id="m-informes-radiologicos">Informes radiológicos</h3>
+<p>Menú: <strong>Informes</strong>. Lista con contadores de <strong>Total</strong>, <strong>Borradores</strong>, <strong>Pendientes</strong> y <strong>Finalizados</strong>.</p>
+<p>Al abrir un informe se entra al <strong>constructor</strong>: bloques arrastrables (Motivo de Consulta, Técnica Utilizada, Hallazgos Radiográficos, Evaluación Anatómica, Diagnóstico Presuntivo, Conclusión y Recomendaciones), <strong>Imágenes Adjuntas</strong>, <strong>Vista Previa</strong> y exportación a PDF.</p>
+<p class="note warn">Hoy los informes son <strong>de ejemplo</strong> (solo en la clínica Demo) y los cambios en el constructor <strong>no se guardan</strong>. Exporta el PDF antes de salir.</p>
+<hr>
+<h2 id="m-10-gestion-sucursales-gastos-laboratorio-convenios-y-liquidaciones">10. Gestión: sucursales, gastos, laboratorio, convenios y liquidaciones</h2>
+<p>Estas secciones funcionan igual: una tabla con <strong>buscador</strong>, botón para <strong>agregar</strong>, íconos para <strong>editar</strong> y <strong>eliminar</strong>, y botón <strong>Exportar a Excel</strong> (descarga un archivo CSV).</p>
+<p><strong>Empieza por Sucursales:</strong> las demás secciones te piden elegir una sucursal.</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Sección</th>
+<th>Campos</th>
+<th>Opciones</th>
+</tr>
+</thead><tbody><tr>
+<td><strong>Sucursales</strong></td>
+<td>Nombre, Dirección, Responsable</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>Gastos</strong></td>
+<td>Fecha, Categoría, Descripción, Monto ($), Sucursal</td>
+<td>Categorías: Arriendo, Sueldos, Insumos, Servicios básicos, Laboratorio externo, Marketing, Otros</td>
+</tr>
+<tr>
+<td><strong>Laboratorio</strong></td>
+<td>Fecha, Paciente, Laboratorio, Trabajo (corona, prótesis…), Costo ($), Estado, Sucursal</td>
+<td>Estados: Enviado, En proceso, Recibido, Entregado</td>
+</tr>
+<tr>
+<td><strong>Convenios</strong></td>
+<td>Nombre, Tipo, Descuento (%), Vigente, Notas</td>
+<td>Tipos: Aseguradora, Empresa, Convenio particular, Otro</td>
+</tr>
+<tr>
+<td><strong>Liquidaciones</strong></td>
+<td>Dos tablas: <strong>Profesionales</strong> (Nombre, Especialidad, Liquidación %) y <strong>Liquidaciones</strong> (Profesional, Periodo, Honorarios brutos, Monto liquidado, Estado, Sucursal)</td>
+<td>Estados: Pendiente, Pagada</td>
+</tr>
+</tbody></table></div>
+<p>En <strong>Liquidaciones</strong>, registra primero a los <strong>Profesionales</strong>: luego aparecen para elegir en cada liquidación.</p>
+<hr>
+<h2 id="m-11-reportes">11. Reportes</h2>
+<p>Menú: <strong>Reportes</strong>. <strong>Reportes de gestión</strong> de la clínica.</p>
+<ol>
+<li>Elige el periodo con <strong>Desde</strong> y <strong>Hasta</strong>, y la <strong>Sucursal</strong> (o <strong>Todas las sucursales</strong>).</li>
+<li>Verás los indicadores: citas en el periodo, pacientes registrados, gastos del periodo, inventario bajo mínimo, laboratorio en curso y monto liquidado a profesionales.</li>
+<li>Gráficos/tablas: <strong>gastos por categoría</strong>, <strong>laboratorio por estado</strong> y <strong>liquidaciones por profesional</strong>.</li>
+<li><strong>Exportar datos:</strong> descarga en CSV (abre en Excel) las citas, gastos, laboratorio, liquidaciones o inventario.</li>
+</ol>
+<p>Nota: las citas no tienen sucursal, así que el filtro por sucursal no las afecta.</p>
+<hr>
+<h2 id="m-12-configuracion">12. Configuración</h2>
+<p>Menú: <strong>Configuración</strong>.</p>
+<ul>
+<li><strong>Perfil de la Clínica:</strong> nombre de la clínica y correo electrónico.</li>
+<li><strong>Preferencias Regionales:</strong> idioma del sistema y <strong>moneda principal</strong> (Dólares USD o Bolívares VES).</li>
+<li><strong>Notificaciones:</strong> alertas de bajo stock y avisos de nuevas citas.</li>
+<li><strong>Seguridad:</strong> las contraseñas se gestionan en Supabase; pide un cambio al administrador.</li>
+</ul>
+<hr>
+<h2 id="m-13-para-el-administrador-usuarios-y-accesos">13. Para el administrador: usuarios y accesos</h2>
+<p>Todo se hace en el panel de Supabase: <a href="https://supabase.com/dashboard/project/elsgbeupmvsqwkdiineb" target="_blank" rel="noopener">https://supabase.com/dashboard/project/elsgbeupmvsqwkdiineb</a>.</p>
+<p>Si prefieres no usar SQL, pídeselo a Claude Code (tiene acceso a la base): por ejemplo, <em>&quot;agrega a <a href="mailto:ana@clinica.cl">ana@clinica.cl</a> a Clínica MCVD como staff&quot;</em>.</p>
+<h3 id="m-131-dar-acceso-a-alguien-nuevo">13.1 Dar acceso a alguien nuevo</h3>
+<ol>
+<li><strong>Authentication → Users → Add user</strong>.<ul>
+<li><strong>Create new user:</strong> escribe correo y contraseña y marca <strong>Auto Confirm User</strong>. Entrega la contraseña a la persona por un canal seguro.</li>
+<li>O <strong>Send invitation:</strong> la persona recibe un correo y elige su contraseña.</li>
+</ul>
+</li>
+<li><strong>SQL Editor</strong> → pega y ejecuta (cambia el correo):</li>
+</ol>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>insert into public.clinic_members (clinic_id, user_id, role)
+select '6736ae2a-6ab1-4ef4-9e52-876258092f19', id, 'staff'
+from auth.users where email = 'persona@ejemplo.com';</code></pre></div>
+<ul>
+<li>Para la clínica <strong>Demo MCVD</strong>, usa <code>28c51a1a-cacc-463b-a946-009f1a328fdb</code> en lugar del primer código.</li>
+<li>Usa <code>&#39;owner&#39;</code> en lugar de <code>&#39;staff&#39;</code> para responsables. (Hoy ambos roles tienen los mismos permisos.)</li>
+</ul>
+<h3 id="m-132-quitar-el-acceso">13.2 Quitar el acceso</h3>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>delete from public.clinic_members
+where user_id = (select id from auth.users where email = 'persona@ejemplo.com');</code></pre></div>
+<p>Para eliminar la cuenta por completo: <strong>Authentication → Users →</strong> (persona) <strong>→ Delete user</strong>.</p>
+<h3 id="m-133-restablecer-una-contrasena">13.3 Restablecer una contraseña</h3>
+<p><strong>Authentication → Users →</strong> (persona) <strong>→ Send password recovery</strong>. Antes, revisa que en <strong>Authentication → URL Configuration</strong> la <strong>Site URL</strong> sea la dirección de la app, para que el enlace del correo lleve al lugar correcto.</p>
+<h3 id="m-134-ajustes-de-seguridad-recomendados-una-sola-vez">13.4 Ajustes de seguridad recomendados (una sola vez)</h3>
+<ul>
+<li><strong>Authentication → Sign In / Providers → Email:</strong> desactiva <strong>Allow new users to sign up</strong>, para que nadie pueda crearse una cuenta por su cuenta.</li>
+<li>Usa contraseñas largas y distintas para cada persona. No compartas usuarios.</li>
+</ul>
+<h3 id="m-135-ver-las-fichas-que-enviaron-los-pacientes">13.5 Ver las fichas que enviaron los pacientes</h3>
+<p><strong>Table Editor → patient_form_submissions.</strong> Cada fila es una ficha: fecha de envío, referencia del paciente y los datos (columna <code>data</code>). Cuando la traspases a la ficha del paciente, pon la fecha en <code>reviewed_at</code> para marcarla como revisada.</p>
+<h3 id="m-136-copias-de-seguridad">13.6 Copias de seguridad</h3>
+<p>Supabase guarda copias automáticas según el plan contratado (<strong>Database → Backups</strong>). Antes de cambios grandes, conviene exportar los datos (ver la documentación técnica, §12.6).</p>
+<h3 id="m-137-aprobar-clinicas-nuevas">13.7 Aprobar clínicas nuevas</h3>
+<p>Una clínica nueva puede pedir acceso sola desde <strong>Solicita acceso</strong> en la pantalla de inicio de sesión. Te llega un correo a <a href="mailto:lemarealejandro@gmail.com">lemarealejandro@gmail.com</a> con el asunto <strong>&quot;Solicitud de alta: …&quot;</strong>.</p>
+<ol>
+<li>Pulsa <strong>Revisar solicitud</strong> en el correo.</li>
+<li>Revisa los datos (clínica, responsable, correo y teléfono).</li>
+<li>Pulsa <strong>Aprobar clínica</strong>, o <strong>Rechazar</strong> y confirma.</li>
+</ol>
+<p>Al aprobar se crea la clínica vacía y la persona ya puede entrar con su correo y la contraseña que eligió. No reenvíes el correo: el enlace permite aprobar la clínica.</p>
+<h3 id="m-138-panel-de-administracion">13.8 Panel de administración</h3>
+<p>Con tu cuenta de administrador entras a <strong>Administración de la plataforma</strong> (<code>/plataforma</code>) al iniciar sesión. Ahí puedes:</p>
+<ul>
+<li>Ver cuántas <strong>solicitudes pendientes</strong>, <strong>clínicas</strong> y <strong>usuarios</strong> hay.</li>
+<li><strong>Aprobar</strong> o <strong>Rechazar</strong> solicitudes sin depender del correo. Usa <strong>Pendientes / Todas</strong> para filtrar y el botón de actualizar para ver las nuevas.</li>
+<li>Ver la lista de <strong>clínicas</strong> con sus usuarios, su rol y su último ingreso.</li>
+</ul>
+<p>El panel <strong>no muestra pacientes ni datos clínicos</strong> de las clínicas. Al aprobar, el sistema no le envía correo a la persona: avísale tú.</p>
+<p>Si además perteneces a una clínica, entras a tu clínica y verás <strong>Administración</strong> al final del menú lateral.</p>
+<hr>
+<h2 id="m-14-preguntas-frecuentes-y-problemas">14. Preguntas frecuentes y problemas</h2>
+<p><strong>No veo los cambios que hizo un compañero.</strong>
+Recarga la página (F5). Los cambios de otros no aparecen solos.</p>
+<p><strong>Hice un cambio y desapareció.</strong>
+Puede que otra persona estuviera editando la misma sección y su guardado reemplazara el tuyo (§3). Vuelve a hacerlo y coordinen quién edita.</p>
+<p><strong>Me saca de la sesión de repente.</strong>
+Tu sesión expiró o alguien cerró sesión con tu usuario en otra pestaña. Vuelve a entrar.</p>
+<p><strong>Perdí el presupuesto que estaba armando.</strong>
+El presupuesto no se guarda (§6). Descarga siempre el PDF antes de salir de la ficha.</p>
+<p><strong>El paciente dice que el formulario no le deja enviar.</strong>
+Si dice &quot;enlace incompleto&quot;, envíale un enlace nuevo desde la ficha. Si no, que revise que llenó los campos obligatorios y su conexión.</p>
+<p><strong>No llegan los correos.</strong>
+Revisa que el email esté bien escrito y la carpeta de spam. El servicio de correo tiene un límite mensual (200 en el plan gratuito). Si persiste, avisa al responsable técnico.</p>
+<p><strong>Veo pacientes que no conozco.</strong>
+Probablemente estás en la clínica <strong>Demo MCVD</strong>, que tiene datos de ejemplo. Pide al administrador que te asigne a <strong>Clínica MCVD</strong>.</p>
+<hr>
+<h2 id="m-15-funciones-que-todavia-no-estan-disponibles">15. Funciones que todavía no están disponibles</h2>
+<ul>
+<li>Pantalla dentro de la app para revisar las fichas enviadas por pacientes.</li>
+<li>&quot;Olvidé mi contraseña&quot; y gestión de usuarios desde la app.</li>
+<li>Actualización automática cuando otra persona hace un cambio.</li>
+<li>Guardar presupuestos e informes radiológicos.</li>
+<li>Asignar sucursal a las citas.</li>
+<li>Cobros reales (el link de pago es de demostración).</li>
+<li>Herramienta de medición en el visor de imágenes.</li>
+<li>Permisos distintos por rol (todos los usuarios de una clínica pueden ver y editar todo).</li>
+</ul>
+
+  </main>
+</div>
+
+<div class="wrap" data-view="tecnica" hidden>
+  <aside class="toc" aria-label="Índice técnico"><h2>Contenido</h2><ol><li><a href="#t-1-resumen"><span class="n">1</span><span>Resumen</span></a></li><li><a href="#t-2-stack-tecnologico"><span class="n">2</span><span>Stack tecnológico</span></a></li><li><a href="#t-3-arquitectura"><span class="n">3</span><span>Arquitectura</span></a></li><li><a href="#t-4-estructura-del-repositorio"><span class="n">4</span><span>Estructura del repositorio</span></a></li><li><a href="#t-5-base-de-datos-supabase"><span class="n">5</span><span>Base de datos (Supabase)</span></a></li><li><a href="#t-6-autenticacion-y-control-de-acceso"><span class="n">6</span><span>Autenticación y control de acceso</span></a></li><li><a href="#t-7-persistencia-de-datos-en-el-frontend"><span class="n">7</span><span>Persistencia de datos en el frontend</span></a></li><li><a href="#t-8-modulos-y-rutas"><span class="n">8</span><span>Módulos y rutas</span></a></li><li><a href="#t-9-integraciones-externas"><span class="n">9</span><span>Integraciones externas</span></a></li><li><a href="#t-10-configuracion-y-variables-de-entorno"><span class="n">10</span><span>Configuración y variables de entorno</span></a></li><li><a href="#t-11-desarrollo-local-build-y-despliegue"><span class="n">11</span><span>Desarrollo local, build y despliegue</span></a></li><li><a href="#t-12-operacion-usuarios-clinicas-y-migraciones"><span class="n">12</span><span>Operación: usuarios, clínicas y migraciones</span></a></li><li><a href="#t-13-herramientas-para-claude-code"><span class="n">13</span><span>Herramientas para Claude Code</span></a></li><li><a href="#t-14-limitaciones-conocidas"><span class="n">14</span><span>Limitaciones conocidas</span></a></li><li><a href="#t-15-proximos-pasos-recomendados"><span class="n">15</span><span>Próximos pasos recomendados</span></a></li><li><a href="#t-16-glosario"><span class="n">16</span><span>Glosario</span></a></li></ol></aside>
+  <main class="doc" id="tecnica">
+    <div class="doc-head"><p class="eyebrow">Para desarrollo y mantenimiento</p><h1>Documentación técnica</h1></div>
+    <p><strong>Actualizada:</strong> 2026-11-18. Describe el código de la rama <code>claude/compassionate-hamilton-iuz1kp</code> y la base de datos de Supabase del proyecto <strong>CliniPlus Project</strong> (<code>elsgbeupmvsqwkdiineb</code>).</p>
+<p><strong>Para quién:</strong> desarrollo, mantenimiento y evaluación técnica. El manual para quienes usan la app está en <a href="#manual"><code>MANUAL_DE_USO.md</code></a>.</p>
+<p><strong>Qué cambió desde la versión del 2026-11-16:</strong> los datos dejaron de vivir solo en el navegador. Ahora se guardan en Supabase (PostgreSQL), el inicio de sesión usa Supabase Auth y el acceso a los datos está protegido por reglas RLS en la base. El formulario público del paciente ahora llega a la clínica.</p>
+<hr>
+<h2 id="t-1-resumen">1. Resumen</h2>
+<ul>
+<li><strong>Aplicación web de una sola página (SPA)</strong> en React 19 + Vite 8, desplegada como sitio estático en Vercel.</li>
+<li><strong>Backend: Supabase</strong> (PostgreSQL 17, región <code>us-west-2</code>). No hay servidor propio: el navegador habla directamente con la API de Supabase usando la clave publicable.</li>
+<li><strong>Seguridad en la base:</strong> todas las tablas tienen <em>Row Level Security</em> (RLS). Un usuario solo ve los datos de la clínica a la que pertenece. La clave publicable incluida en el bundle no da acceso a datos sin una sesión válida de un miembro.</li>
+<li><strong>Multi-clínica (base):</strong> el modelo de datos ya separa clínicas (<code>clinics</code>) y miembros (<code>clinic_members</code>). Hoy existen dos clínicas: <strong>Clínica MCVD</strong> (datos reales, arranca vacía) y <strong>Demo MCVD</strong> (datos de ejemplo).</li>
+<li><strong>Formato de datos:</strong> cada sección de la app (pacientes, agenda, inventario…) se guarda como un documento JSON por clínica en la tabla <code>clinic_data</code>. Ver <a href="#t-53-por-que-documentos-json-y-no-tablas-por-entidad">§5.3</a> para las ventajas y límites de esta decisión.</li>
+</ul>
+<hr>
+<h2 id="t-2-stack-tecnologico">2. Stack tecnológico</h2>
+<div class="table-wrap"><table><thead><tr>
+<th>Capa</th>
+<th>Tecnología</th>
+<th>Versión / nota</th>
+</tr>
+</thead><tbody><tr>
+<td>UI</td>
+<td>React</td>
+<td><code>^19.2.4</code></td>
+</tr>
+<tr>
+<td>Build</td>
+<td>Vite</td>
+<td><code>^8.0.1</code></td>
+</tr>
+<tr>
+<td>Enrutado</td>
+<td>react-router-dom</td>
+<td><code>^7.16.0</code> (<code>BrowserRouter</code>)</td>
+</tr>
+<tr>
+<td>Backend / BD</td>
+<td>Supabase (PostgreSQL 17)</td>
+<td>Proyecto <code>elsgbeupmvsqwkdiineb</code></td>
+</tr>
+<tr>
+<td>Cliente BD y Auth</td>
+<td><code>@supabase/supabase-js</code></td>
+<td>v2</td>
+</tr>
+<tr>
+<td>Iconos</td>
+<td>lucide-react</td>
+<td><code>^0.577.0</code></td>
+</tr>
+<tr>
+<td>Animación</td>
+<td>framer-motion</td>
+<td><code>^12.38.0</code></td>
+</tr>
+<tr>
+<td>Arrastrar y soltar</td>
+<td>@dnd-kit/core, sortable, utilities</td>
+<td>Constructor de informes</td>
+</tr>
+<tr>
+<td>Firma digital</td>
+<td>react-signature-canvas</td>
+<td><code>^1.1.0-alpha.2</code> (prerelease)</td>
+</tr>
+<tr>
+<td>PDF</td>
+<td>jspdf + html2canvas (presupuesto), html2pdf.js (informes)</td>
+<td>Generado en el navegador</td>
+</tr>
+<tr>
+<td>Correo</td>
+<td>@emailjs/browser</td>
+<td><code>^5.0.3</code>, envío desde el navegador</td>
+</tr>
+<tr>
+<td>Estilos</td>
+<td>CSS propio (<code>src/index.css</code>), estilos inline en componentes, Tailwind vía PostCSS</td>
+<td>Conviven los tres enfoques</td>
+</tr>
+<tr>
+<td>Lint</td>
+<td>ESLint 9 + react-hooks + react-refresh</td>
+<td><code>npm run lint</code></td>
+</tr>
+<tr>
+<td>Hosting</td>
+<td>Vercel</td>
+<td><code>vercel.json</code> reescribe todas las rutas a <code>index.html</code></td>
+</tr>
+</tbody></table></div>
+<p>Scripts (<code>package.json</code>): <code>dev</code>, <code>build</code>, <code>lint</code>, <code>preview</code>.</p>
+<hr>
+<h2 id="t-3-arquitectura">3. Arquitectura</h2>
+<div class="code"><div class="code-bar"><span>texto</span><button type="button" class="copy">Copiar</button></div><pre><code>Navegador (SPA React)
+ │
+ ├─ main.jsx ── initAuth(): recupera la sesión de Supabase ANTES de renderizar
+ │
+ ├─ /login ──────────────► supabase.auth.signInWithPassword(email, contraseña)
+ │                          + lectura de clinic_members → clínica del usuario
+ │
+ ├─ /admin/* (RequireAuth: sesión + clínica)
+ │    ├─ AdminLayout ── usePersistentState(...) ──┐
+ │    └─ Páginas ────── usePersistentState(...) ──┤
+ │                                                ▼
+ │                          Supabase REST (PostgREST) ── tabla clinic_data
+ │                          (filtrado por RLS: solo la clínica del usuario)
+ │                          + copia local en localStorage (caché)
+ │
+ ├─ /paciente/ficha/:id?c=&lt;clinic_id&gt;  (pública, sin login)
+ │    └─ INSERT en patient_form_submissions (RLS: solo insertar)
+ │
+ ├─ PDF: html2canvas + jsPDF / html2pdf.js en el navegador
+ └─ Correo: EmailJS desde el navegador</code></pre></div>
+<p><strong>Principio de seguridad:</strong> el frontend nunca decide quién puede ver qué. Esa decisión la toman las políticas RLS en PostgreSQL. Aunque alguien modifique el JavaScript en su navegador, la base solo le devuelve filas de las clínicas de las que es miembro.</p>
+<hr>
+<h2 id="t-4-estructura-del-repositorio">4. Estructura del repositorio</h2>
+<div class="code"><div class="code-bar"><span>texto</span><button type="button" class="copy">Copiar</button></div><pre><code>MCVD/
+├── .claude/skills/            Skills de Supabase para Claude Code (ver §13)
+├── .mcp.json                  Servidor MCP de Supabase para Claude Code (ver §13)
+├── .env.example               Plantilla de variables de entorno
+├── docs/
+│   ├── DOCUMENTACION_TECNICA.md   Este documento
+│   └── MANUAL_DE_USO.md           Manual para usuarios de la clínica
+├── supabase/migrations/       Migraciones SQL versionadas (esquema + RLS)
+├── public/                    Archivos estáticos
+├── src/
+│   ├── main.jsx               Punto de entrada: initAuth() y render
+│   ├── App.jsx                Rutas y RequireAuth
+│   ├── lib/supabase.js        Cliente de Supabase
+│   ├── utils/
+│   │   ├── auth.js            Login/logout, sesión y clínica actual
+│   │   ├── usePersistentState.js  Estado sincronizado con Supabase
+│   │   ├── emailService.js    Envíos con EmailJS
+│   │   ├── csv.js             Exportación CSV
+│   │   ├── date.js, format.js Utilidades de formato
+│   │   └── sucursales.js      Clave y helpers de sucursales
+│   ├── components/
+│   │   ├── layout/            AdminLayout (menú lateral), coachmarks, header, footer
+│   │   ├── clinical/          Odontograma, periodontograma, historia, tratamientos,
+│   │   │                      presupuesto con PDF, firma
+│   │   └── pro/RecordsPage.jsx  Lista/CRUD/CSV genérico (gastos, laboratorio, etc.)
+│   ├── pages/
+│   │   ├── Login.jsx, PatientSelfForm.jsx
+│   │   ├── admin/             Dashboard, Agenda, Pacientes, Inventario, Reportes,
+│   │   │                      Sucursales, Gastos, Laboratorio, Convenios,
+│   │   │                      Liquidaciones, Settings
+│   │   ├── Imagenologia/      Estudios, visor, plantillas
+│   │   └── Informes/          Lista y constructor de informes radiológicos
+│   ├── data/                  Datos de ejemplo, catálogo de tratamientos,
+│   │                          textos de ayuda, configuración Pro
+│   └── context/LanguageContext.jsx
+├── vercel.json, vite.config.js, eslint.config.js
+└── package.json</code></pre></div>
+<hr>
+<h2 id="t-5-base-de-datos-supabase">5. Base de datos (Supabase)</h2>
+<p>Proyecto: <strong>CliniPlus Project</strong>, ref <code>elsgbeupmvsqwkdiineb</code>, URL <code>https://elsgbeupmvsqwkdiineb.supabase.co</code>.</p>
+<p>Migración que crea todo: <a href="https://github.com/lemarealejandro/MCVD/blob/claude/compassionate-hamilton-iuz1kp/supabase/migrations/20261118000000_clinic_schema_auth_rls.sql" target="_blank" rel="noopener"><code>supabase/migrations/20261118000000_clinic_schema_auth_rls.sql</code></a>.</p>
+<h3 id="t-51-tablas-esquema-public">5.1 Tablas (esquema <code>public</code>)</h3>
+<h4 id="t-clinics-clinicas"><code>clinics</code> — clínicas</h4>
+<div class="table-wrap"><table><thead><tr>
+<th>Columna</th>
+<th>Tipo</th>
+<th>Nota</th>
+</tr>
+</thead><tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> PK</td>
+<td><code>gen_random_uuid()</code></td>
+</tr>
+<tr>
+<td><code>name</code></td>
+<td><code>text</code></td>
+<td>1–200 caracteres</td>
+</tr>
+<tr>
+<td><code>demo_data</code></td>
+<td><code>boolean</code></td>
+<td><code>true</code>: la app arranca con datos de ejemplo</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamptz</code></td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p>Filas actuales:</p>
+<div class="table-wrap"><table><thead><tr>
+<th>id</th>
+<th>name</th>
+<th>demo_data</th>
+</tr>
+</thead><tbody><tr>
+<td><code>6736ae2a-6ab1-4ef4-9e52-876258092f19</code></td>
+<td>Clínica MCVD</td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td><code>28c51a1a-cacc-463b-a946-009f1a328fdb</code></td>
+<td>Demo MCVD</td>
+<td><code>true</code></td>
+</tr>
+</tbody></table></div>
+<h4 id="t-clinicmembers-usuarios-de-cada-clinica"><code>clinic_members</code> — usuarios de cada clínica</h4>
+<div class="table-wrap"><table><thead><tr>
+<th>Columna</th>
+<th>Tipo</th>
+<th>Nota</th>
+</tr>
+</thead><tbody><tr>
+<td><code>clinic_id</code></td>
+<td><code>uuid</code> FK → <code>clinics.id</code></td>
+<td><code>on delete cascade</code></td>
+</tr>
+<tr>
+<td><code>user_id</code></td>
+<td><code>uuid</code> FK → <code>auth.users.id</code></td>
+<td><code>on delete cascade</code></td>
+</tr>
+<tr>
+<td><code>role</code></td>
+<td><code>text</code></td>
+<td><code>owner</code> o <code>staff</code> (hoy la app no distingue permisos por rol)</td>
+</tr>
+<tr>
+<td><code>created_at</code></td>
+<td><code>timestamptz</code></td>
+<td></td>
+</tr>
+</tbody></table></div>
+<p>PK: <code>(clinic_id, user_id)</code>. Índice en <code>user_id</code>.</p>
+<h4 id="t-clinicdata-datos-de-la-app"><code>clinic_data</code> — datos de la app</h4>
+<div class="table-wrap"><table><thead><tr>
+<th>Columna</th>
+<th>Tipo</th>
+<th>Nota</th>
+</tr>
+</thead><tbody><tr>
+<td><code>clinic_id</code></td>
+<td><code>uuid</code> FK → <code>clinics.id</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>collection</code></td>
+<td><code>text</code></td>
+<td>Nombre de la colección; debe cumplir <code>^[a-z0-9_]{1,64}$</code></td>
+</tr>
+<tr>
+<td><code>value</code></td>
+<td><code>jsonb</code></td>
+<td>Contenido completo de la colección</td>
+</tr>
+<tr>
+<td><code>updated_at</code></td>
+<td><code>timestamptz</code></td>
+<td>Lo fija un trigger en cada escritura</td>
+</tr>
+<tr>
+<td><code>updated_by</code></td>
+<td><code>uuid</code> FK → <code>auth.users.id</code></td>
+<td>Lo fija un trigger con <code>auth.uid()</code></td>
+</tr>
+</tbody></table></div>
+<p>PK: <code>(clinic_id, collection)</code>.</p>
+<p>Colecciones que usa la app (valor de <code>collection</code>):</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Colección</th>
+<th>Contenido</th>
+<th>Pantallas</th>
+</tr>
+</thead><tbody><tr>
+<td><code>clinicplus_patients</code></td>
+<td>Objeto indexado por id de paciente: datos personales, historia clínica, odontograma, periodontograma, <code>treatments[]</code>, firmas (PNG en base64)</td>
+<td>Pacientes, ficha, Dashboard, Reportes</td>
+</tr>
+<tr>
+<td><code>clinicplus_appointments</code></td>
+<td>Array de citas (<code>date</code> YYYY-MM-DD, <code>time</code>, <code>status</code>, <code>doctor</code>, <code>service</code>, <code>patient</code>, <code>patientEmail</code>)</td>
+<td>Agenda, Dashboard, Reportes</td>
+</tr>
+<tr>
+<td><code>clinicplus_inventory</code></td>
+<td>Array de artículos (<code>quantity</code>, <code>minStock</code>, <code>priceUsd</code>, categoría)</td>
+<td>Inventario, Dashboard, Reportes</td>
+</tr>
+<tr>
+<td><code>clinicplus_estudios</code></td>
+<td>Array de estudios de imagen</td>
+<td>Imagenología</td>
+</tr>
+<tr>
+<td><code>clinicplus_plantillas</code></td>
+<td>Plantillas de informe radiológico</td>
+<td>Imagenología → Plantillas</td>
+</tr>
+<tr>
+<td><code>clinicplus_settings</code></td>
+<td>Perfil de la clínica y preferencias</td>
+<td>Configuración</td>
+</tr>
+<tr>
+<td><code>clinicplus_sucursales</code></td>
+<td>Sedes (<code>nombre</code>, <code>direccion</code>, <code>responsable</code>)</td>
+<td>Sucursales, Gastos, Laboratorio, Liquidaciones, Reportes</td>
+</tr>
+<tr>
+<td><code>clinicplus_gastos</code></td>
+<td>Gastos (<code>fecha</code>, <code>categoria</code>, <code>monto</code>, <code>sucursalId</code>)</td>
+<td>Gastos, Reportes</td>
+</tr>
+<tr>
+<td><code>clinicplus_laboratorio</code></td>
+<td>Órdenes de laboratorio (<code>estado</code>, <code>costo</code>, <code>sucursalId</code>)</td>
+<td>Laboratorio, Reportes</td>
+</tr>
+<tr>
+<td><code>clinicplus_convenios</code></td>
+<td>Convenios (<code>descuento</code>, <code>vigente</code>)</td>
+<td>Convenios</td>
+</tr>
+<tr>
+<td><code>clinicplus_profesionales</code></td>
+<td>Profesionales y % de liquidación</td>
+<td>Liquidaciones</td>
+</tr>
+<tr>
+<td><code>clinicplus_liquidaciones</code></td>
+<td>Liquidaciones (<code>honorarios</code>, <code>porcentaje</code>, <code>monto</code>, <code>estado</code>)</td>
+<td>Liquidaciones, Reportes</td>
+</tr>
+</tbody></table></div>
+<p>Una fila se crea la primera vez que alguien de la clínica abre la pantalla que usa esa colección.</p>
+<h4 id="t-patientformsubmissions-fichas-enviadas-por-pacientes"><code>patient_form_submissions</code> — fichas enviadas por pacientes</h4>
+<div class="table-wrap"><table><thead><tr>
+<th>Columna</th>
+<th>Tipo</th>
+<th>Nota</th>
+</tr>
+</thead><tbody><tr>
+<td><code>id</code></td>
+<td><code>uuid</code> PK</td>
+<td></td>
+</tr>
+<tr>
+<td><code>clinic_id</code></td>
+<td><code>uuid</code> FK → <code>clinics.id</code></td>
+<td>Viene del parámetro <code>?c=</code> del enlace</td>
+</tr>
+<tr>
+<td><code>patient_ref</code></td>
+<td><code>text</code></td>
+<td>Id de paciente de la URL (≤ 100 caracteres)</td>
+</tr>
+<tr>
+<td><code>data</code></td>
+<td><code>jsonb</code></td>
+<td>Respuestas del formulario (&lt; 100 KB)</td>
+</tr>
+<tr>
+<td><code>submitted_at</code></td>
+<td><code>timestamptz</code></td>
+<td></td>
+</tr>
+<tr>
+<td><code>reviewed_at</code></td>
+<td><code>timestamptz</code></td>
+<td><code>null</code> hasta que la clínica la marque revisada</td>
+</tr>
+</tbody></table></div>
+<p>Índice: <code>(clinic_id, submitted_at desc)</code>.</p>
+<h3 id="t-52-funciones-y-triggers-esquema-private-no-expuesto-por-la-api">5.2 Funciones y triggers (esquema <code>private</code>, no expuesto por la API)</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Función</th>
+<th>Tipo</th>
+<th>Uso</th>
+</tr>
+</thead><tbody><tr>
+<td><code>private.is_clinic_member(cid uuid)</code></td>
+<td><code>security definer</code>, <code>stable</code></td>
+<td>¿El usuario actual (<code>auth.uid()</code>) es miembro de la clínica? La usan las políticas RLS. Ejecutable solo por <code>authenticated</code>.</td>
+</tr>
+<tr>
+<td><code>private.clinic_exists(cid uuid)</code></td>
+<td><code>security definer</code>, <code>stable</code></td>
+<td>¿Existe la clínica? La usa la política del formulario público, que no puede leer <code>clinics</code>.</td>
+</tr>
+<tr>
+<td><code>private.touch_clinic_data()</code></td>
+<td>trigger</td>
+<td><code>BEFORE INSERT OR UPDATE</code> en <code>clinic_data</code>: fija <code>updated_at = now()</code> y <code>updated_by = auth.uid()</code>.</td>
+</tr>
+</tbody></table></div>
+<p>Todas usan <code>search_path = &#39;&#39;</code> para evitar suplantación de objetos.</p>
+<h3 id="t-53-por-que-documentos-json-y-no-tablas-por-entidad">5.3 Por qué documentos JSON y no tablas por entidad</h3>
+<p><strong>Decisión:</strong> guardar cada colección completa como un <code>jsonb</code> por clínica, en lugar de tablas <code>patients</code>, <code>appointments</code>, etc. con columnas.</p>
+<p><strong>Ventajas:</strong></p>
+<ul>
+<li>No hubo que reescribir las ~20 pantallas existentes: siguen trabajando con los mismos objetos que antes.</li>
+<li>La migración desde <code>localStorage</code> es automática (ver <a href="#t-72-migracion-automatica-desde-la-version-anterior">§7.2</a>).</li>
+<li>La seguridad no cambia: RLS protege igual por clínica.</li>
+</ul>
+<p><strong>Límites:</strong></p>
+<ul>
+<li><strong>Concurrencia:</strong> si dos personas editan la misma colección a la vez, gana la última escritura (se pierde el cambio de la otra).</li>
+<li><strong>Tamaño:</strong> cada cambio reescribe la colección completa. Con muchos pacientes con firmas o imágenes en base64, <code>clinicplus_patients</code> crece y cada guardado es más lento.</li>
+<li><strong>Consultas:</strong> no se pueden hacer reportes SQL cómodos ni índices por campo.</li>
+<li><strong>Auditoría:</strong> solo se sabe quién hizo el último cambio de cada colección, no el historial.</li>
+</ul>
+<p>Cuando estos límites empiecen a afectar el uso real, el siguiente paso es normalizar primero las colecciones más grandes o más editadas (pacientes y citas) en tablas propias. Ver <a href="#t-15-proximos-pasos-recomendados">§15</a>.</p>
+<hr>
+<h2 id="t-6-autenticacion-y-control-de-acceso">6. Autenticación y control de acceso</h2>
+<h3 id="t-61-inicio-de-sesion-srcutilsauthjs">6.1 Inicio de sesión (<code>src/utils/auth.js</code>)</h3>
+<ol>
+<li><strong>Al abrir la app</strong>, <code>main.jsx</code> llama a <code>initAuth()</code> antes de renderizar:<ul>
+<li><code>supabase.auth.getSession()</code> recupera la sesión guardada por Supabase (en <code>localStorage</code>, renovada automáticamente).</li>
+<li>Si hay sesión, carga la membresía: <code>clinic_members</code> + <code>clinics(name, demo_data)</code>.</li>
+<li>Registra <code>onAuthStateChange</code>: si la sesión expira o se cierra en otra pestaña, redirige a <code>/login</code>.</li>
+</ul>
+</li>
+<li><strong>Login</strong> (<code>login(email, password)</code>):<ul>
+<li><code>supabase.auth.signInWithPassword</code>.</li>
+<li>Carga la membresía. <strong>Si el usuario no pertenece a ninguna clínica, se cierra la sesión</strong> y se muestra &quot;Tu usuario no tiene una clínica asignada&quot;.</li>
+<li>Borra <code>clinicplus_coach_seen</code> para que vuelvan a mostrarse las ayudas de sección.</li>
+</ul>
+</li>
+<li><strong>Logout</strong> (<code>logout()</code>): limpia el estado y llama a <code>supabase.auth.signOut()</code>.</li>
+</ol>
+<p>API exportada:</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Función</th>
+<th>Devuelve</th>
+</tr>
+</thead><tbody><tr>
+<td><code>initAuth()</code></td>
+<td><code>Promise&lt;void&gt;</code></td>
+</tr>
+<tr>
+<td><code>login(email, password)</code></td>
+<td><code>{ success: true }</code> o <code>{ success: false, error }</code></td>
+</tr>
+<tr>
+<td><code>logout()</code></td>
+<td><code>Promise&lt;void&gt;</code></td>
+</tr>
+<tr>
+<td><code>isAuthenticated()</code></td>
+<td><code>true</code> si hay sesión <strong>y</strong> clínica</td>
+</tr>
+<tr>
+<td><code>isSetupAccount()</code></td>
+<td><code>true</code> si la clínica <strong>no</strong> usa datos de ejemplo (<code>demo_data = false</code>)</td>
+</tr>
+<tr>
+<td><code>getClinicId()</code>, <code>getClinicName()</code></td>
+<td>Clínica actual</td>
+</tr>
+</tbody></table></div>
+<p><code>RequireAuth</code> (en <code>App.jsx</code>) usa <code>isAuthenticated()</code> para proteger <code>/admin/*</code>.</p>
+<p>Si un usuario pertenece a varias clínicas, hoy se usa la primera en la que fue agregado (por <code>created_at</code>). No hay selector de clínica.</p>
+<h3 id="t-62-reglas-de-acceso-rls">6.2 Reglas de acceso (RLS)</h3>
+<p>Permisos de tabla (<code>GRANT</code>) mínimos + políticas:</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Tabla</th>
+<th><code>anon</code> (sin sesión)</th>
+<th><code>authenticated</code> (con sesión)</th>
+</tr>
+</thead><tbody><tr>
+<td><code>clinics</code></td>
+<td>—</td>
+<td>Leer solo sus clínicas</td>
+</tr>
+<tr>
+<td><code>clinic_members</code></td>
+<td>—</td>
+<td>Leer solo sus propias membresías</td>
+</tr>
+<tr>
+<td><code>clinic_data</code></td>
+<td>—</td>
+<td>Leer, crear, editar y borrar solo de sus clínicas</td>
+</tr>
+<tr>
+<td><code>patient_form_submissions</code></td>
+<td>Solo <strong>insertar</strong>, en una clínica existente y con <code>reviewed_at</code> vacío</td>
+<td>Insertar; leer, marcar revisada y borrar solo de sus clínicas</td>
+</tr>
+</tbody></table></div>
+<p>Nadie puede crear clínicas ni membresías desde la app: se hace desde el panel de Supabase o por SQL (ver <a href="#t-12-operacion-usuarios-clinicas-y-migraciones">§12</a>).</p>
+<h3 id="t-63-pruebas-realizadas">6.3 Pruebas realizadas</h3>
+<p>Se probaron en la base, simulando usuarios dentro de una transacción revertida (2026-11-18). Las 10 pasaron:</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Caso</th>
+<th>Resultado esperado</th>
+</tr>
+</thead><tbody><tr>
+<td>Miembro lee los datos de su clínica</td>
+<td>✅ ve sus filas</td>
+</tr>
+<tr>
+<td>Miembro ve solo su clínica</td>
+<td>✅ 1 clínica</td>
+</tr>
+<tr>
+<td>Miembro intenta escribir en otra clínica</td>
+<td>✅ rechazado</td>
+</tr>
+<tr>
+<td>Usuario sin clínica lee datos</td>
+<td>✅ 0 filas</td>
+</tr>
+<tr>
+<td>Usuario sin clínica lee clínicas</td>
+<td>✅ 0 filas</td>
+</tr>
+<tr>
+<td>Usuario sin clínica intenta modificar datos</td>
+<td>✅ sin efecto</td>
+</tr>
+<tr>
+<td>Anónimo envía una ficha</td>
+<td>✅ permitido</td>
+</tr>
+<tr>
+<td>Anónimo lee fichas</td>
+<td>✅ rechazado</td>
+</tr>
+<tr>
+<td>Anónimo lee datos de la clínica</td>
+<td>✅ rechazado</td>
+</tr>
+<tr>
+<td>Anónimo envía ficha a clínica inexistente</td>
+<td>✅ rechazado</td>
+</tr>
+</tbody></table></div>
+<p>El asesor de seguridad de Supabase (<em>Security Advisor</em>) no reporta alertas.</p>
+<p><strong>Pendiente de probar:</strong> un inicio de sesión real desde el navegador contra Supabase (la red del entorno donde se desarrolló bloquea <code>supabase.co</code>).</p>
+<h3 id="t-64-recomendaciones-de-configuracion-en-supabase">6.4 Recomendaciones de configuración en Supabase</h3>
+<ul>
+<li><strong>Desactivar el registro público:</strong> <em>Authentication → Sign In / Providers → Email → Allow new users to sign up</em> = desactivado. Aunque esté activo, un usuario registrado sin membresía no ve datos.</li>
+<li><strong>URL del sitio:</strong> <em>Authentication → URL Configuration → Site URL</em> = la URL de producción en Vercel, para que los correos de restablecimiento de contraseña apunten al lugar correcto.</li>
+<li>Considerar MFA para cuentas <code>owner</code>.</li>
+</ul>
+<hr>
+<h2 id="t-7-persistencia-de-datos-en-el-frontend">7. Persistencia de datos en el frontend</h2>
+<p>Archivo: <code>src/utils/usePersistentState.js</code>. Misma interfaz que <code>useState</code>: <code>const [value, setValue] = usePersistentState(clave, valorInicial)</code>.</p>
+<h3 id="t-71-funcionamiento">7.1 Funcionamiento</h3>
+<ol>
+<li><strong>Valor inicial inmediato</strong> (para no mostrar la pantalla vacía mientras carga), en este orden:<ol>
+<li>Caché local <code>clinic:&lt;clinic_id&gt;:&lt;clave&gt;</code> en <code>localStorage</code>.</li>
+<li>Datos de la versión anterior (ver §7.2).</li>
+<li><code>valorInicial</code> (datos de ejemplo si la clínica es demo, vacío si no).</li>
+</ol>
+</li>
+<li><strong>Carga desde Supabase:</strong> <code>select value from clinic_data where clinic_id = … and collection = …</code>.<ul>
+<li>Si existe, reemplaza el valor y actualiza la caché.</li>
+<li>Si no existe, <strong>sube el valor actual</strong> (<code>upsert … ignoreDuplicates</code>: si otra pestaña lo creó primero, se respeta el suyo).</li>
+<li>Si la carga falla, <strong>no se guarda nada</strong> en esa pantalla para no pisar datos de la base con una copia vieja.</li>
+</ul>
+</li>
+<li><strong>Guardado:</strong> cada cambio se escribe en la caché local y, tras 500 ms sin nuevos cambios, se hace <code>upsert</code> en <code>clinic_data</code>. Si la pantalla se cierra antes de esos 500 ms, se guarda de inmediato.</li>
+<li>Los errores se registran en la consola del navegador (<code>No se pudo guardar …</code>). <strong>No hay aviso visual</strong> al usuario.</li>
+</ol>
+<h3 id="t-72-migracion-automatica-desde-la-version-anterior">7.2 Migración automática desde la versión anterior</h3>
+<p>Antes de Supabase, los datos estaban en <code>localStorage</code> con estas claves:</p>
+<ul>
+<li>Cuenta admin: <code>clinicplus_patients</code>, <code>clinicplus_appointments</code>, … (sin prefijo).</li>
+<li>Cuenta secundaria de primer uso: <code>setup:clinicplus_patients</code>, …</li>
+</ul>
+<p>La primera vez que un miembro abre una pantalla y la colección <strong>no existe todavía en Supabase</strong>, se sube lo que había en ese navegador:</p>
+<ul>
+<li>Clínica con <code>demo_data = true</code> (Demo MCVD) ← claves sin prefijo (antigua cuenta admin).</li>
+<li>Clínica con <code>demo_data = false</code> (Clínica MCVD) ← claves <code>setup:</code> (antigua cuenta secundaria).</li>
+</ul>
+<p>Las claves antiguas no se borran. <strong>Importante:</strong> el primer navegador que abra cada pantalla define el contenido inicial en Supabase. Conviene que la primera persona en entrar lo haga desde el equipo que tiene los datos reales.</p>
+<h3 id="t-73-otras-claves-locales">7.3 Otras claves locales</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Almacenamiento</th>
+<th>Clave</th>
+<th>Uso</th>
+</tr>
+</thead><tbody><tr>
+<td><code>localStorage</code></td>
+<td><code>sb-elsgbeupmvsqwkdiineb-auth-token</code></td>
+<td>Sesión de Supabase (la gestiona supabase-js)</td>
+</tr>
+<tr>
+<td><code>localStorage</code></td>
+<td><code>clinic:&lt;clinic_id&gt;:&lt;colección&gt;</code></td>
+<td>Caché de cada colección</td>
+</tr>
+<tr>
+<td><code>sessionStorage</code></td>
+<td><code>clinicplus_coach_seen</code></td>
+<td>Secciones cuya ayuda ya se mostró en esta sesión</td>
+</tr>
+</tbody></table></div>
+<hr>
+<h2 id="t-8-modulos-y-rutas">8. Módulos y rutas</h2>
+<p>Rutas en <code>src/App.jsx</code>. Las páginas se cargan de forma diferida (<code>lazy</code>).</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Ruta</th>
+<th>Módulo</th>
+<th>Archivo(s)</th>
+<th>Datos</th>
+</tr>
+</thead><tbody><tr>
+<td><code>/login</code></td>
+<td>Acceso</td>
+<td><code>pages/Login.jsx</code></td>
+<td>Supabase Auth</td>
+</tr>
+<tr>
+<td><code>/admin</code></td>
+<td>Dashboard</td>
+<td><code>pages/admin/Dashboard.jsx</code></td>
+<td>pacientes, citas, inventario</td>
+</tr>
+<tr>
+<td><code>/admin/agenda</code></td>
+<td>Agenda</td>
+<td><code>pages/admin/Agenda.jsx</code></td>
+<td><code>clinicplus_appointments</code></td>
+</tr>
+<tr>
+<td><code>/admin/patients</code></td>
+<td>Pacientes</td>
+<td><code>pages/admin/PatientsList.jsx</code></td>
+<td><code>clinicplus_patients</code></td>
+</tr>
+<tr>
+<td><code>/admin/patients/:id</code></td>
+<td>Ficha clínica</td>
+<td><code>pages/admin/PatientHistory.jsx</code>, <code>components/clinical/*</code></td>
+<td><code>clinicplus_patients</code></td>
+</tr>
+<tr>
+<td><code>/admin/inventory</code></td>
+<td>Inventario + conversor USD/Bs</td>
+<td><code>pages/admin/Inventory.jsx</code></td>
+<td><code>clinicplus_inventory</code></td>
+</tr>
+<tr>
+<td><code>/admin/imagenologia</code></td>
+<td>Estudios</td>
+<td><code>pages/Imagenologia/Dashboard.jsx</code></td>
+<td><code>clinicplus_estudios</code></td>
+</tr>
+<tr>
+<td><code>/admin/imagenologia/estudio/:id</code></td>
+<td>Visor</td>
+<td><code>pages/Imagenologia/VisorEstudio.jsx</code></td>
+<td><code>clinicplus_estudios</code></td>
+</tr>
+<tr>
+<td><code>/admin/imagenologia/plantillas</code></td>
+<td>Plantillas</td>
+<td><code>pages/Imagenologia/Plantillas.jsx</code></td>
+<td><code>clinicplus_plantillas</code></td>
+</tr>
+<tr>
+<td><code>/admin/informes</code></td>
+<td>Informes radiológicos</td>
+<td><code>pages/Informes/InformesDashboard.jsx</code></td>
+<td>Datos de ejemplo (<code>mockInformes</code>), no persistentes</td>
+</tr>
+<tr>
+<td><code>/admin/informes/constructor/:id</code></td>
+<td>Constructor de informe</td>
+<td><code>pages/Informes/ConstructorInformeMejorado.jsx</code></td>
+<td>Ídem</td>
+</tr>
+<tr>
+<td><code>/admin/reportes</code></td>
+<td>Reportes y exportación CSV</td>
+<td><code>pages/admin/Reportes.jsx</code></td>
+<td>Varias colecciones (solo lectura)</td>
+</tr>
+<tr>
+<td><code>/admin/sucursales</code></td>
+<td>Sucursales</td>
+<td><code>pages/admin/Sucursales.jsx</code></td>
+<td><code>clinicplus_sucursales</code></td>
+</tr>
+<tr>
+<td><code>/admin/gastos</code></td>
+<td>Gastos</td>
+<td><code>pages/admin/Gastos.jsx</code></td>
+<td><code>clinicplus_gastos</code></td>
+</tr>
+<tr>
+<td><code>/admin/laboratorio</code></td>
+<td>Laboratorio</td>
+<td><code>pages/admin/Laboratorio.jsx</code></td>
+<td><code>clinicplus_laboratorio</code></td>
+</tr>
+<tr>
+<td><code>/admin/convenios</code></td>
+<td>Convenios</td>
+<td><code>pages/admin/Convenios.jsx</code></td>
+<td><code>clinicplus_convenios</code></td>
+</tr>
+<tr>
+<td><code>/admin/liquidaciones</code></td>
+<td>Profesionales y liquidaciones</td>
+<td><code>pages/admin/Liquidaciones.jsx</code></td>
+<td><code>clinicplus_profesionales</code>, <code>clinicplus_liquidaciones</code></td>
+</tr>
+<tr>
+<td><code>/admin/settings</code></td>
+<td>Configuración</td>
+<td><code>pages/admin/Settings.jsx</code></td>
+<td><code>clinicplus_settings</code></td>
+</tr>
+<tr>
+<td><code>/registro</code></td>
+<td>Solicitud de alta de clínica (pública)</td>
+<td><code>pages/Registro.jsx</code></td>
+<td>Edge Function <code>clinic-signup</code></td>
+</tr>
+<tr>
+<td><code>/aprobar-clinica?id=…&amp;token=…</code></td>
+<td>Revisión de una solicitud desde el correo</td>
+<td><code>pages/AprobarClinica.jsx</code></td>
+<td>Edge Function <code>clinic-approval</code></td>
+</tr>
+<tr>
+<td><code>/plataforma</code></td>
+<td>Panel del administrador de la plataforma</td>
+<td><code>pages/Plataforma.jsx</code></td>
+<td><code>admin_overview()</code>, <code>admin_review_clinic_request()</code></td>
+</tr>
+<tr>
+<td><code>/paciente/ficha/:patientId?c=&lt;clinic_id&gt;</code></td>
+<td>Formulario del paciente (público)</td>
+<td><code>pages/PatientSelfForm.jsx</code></td>
+<td>INSERT en <code>patient_form_submissions</code></td>
+</tr>
+<tr>
+<td><code>*</code></td>
+<td>Redirige a <code>/login</code></td>
+<td><code>App.jsx</code></td>
+<td>—</td>
+</tr>
+</tbody></table></div>
+<h3 id="t-81-componentes-destacados">8.1 Componentes destacados</h3>
+<ul>
+<li><strong><code>AdminLayout</code></strong>: menú lateral, cierre de sesión, y estado compartido (pacientes, citas, inventario, estudios) que pasa a las páginas mediante el contexto de <code>Outlet</code>.</li>
+<li><strong><code>RecordsPage</code></strong> (<code>components/pro/</code>): lista con búsqueda, alta, edición, baja y exportación CSV, configurada por props (<code>storageKey</code>, <code>fields</code>, <code>columns</code>…). La usan Sucursales, Gastos, Laboratorio, Convenios y Liquidaciones.</li>
+<li><strong>Clínicos</strong> (<code>components/clinical/</code>): <code>Odontogram</code>, <code>Periodontodiagrama</code> (sondaje de 6 puntos, sangrado, supuración, recesión, movilidad), <code>ClinicalHistoryEditor</code>, <code>TreatmentsTab</code> + <code>BudgetWithPDF</code> (catálogo en <code>data/treatmentCatalog.js</code>, tasa USD/VES editable, PDF A4), <code>SignatureCanvas</code>.</li>
+<li><strong>Coachmarks</strong> (<code>components/layout/SectionCoachmark.jsx</code>, textos en <code>data/sectionHelp.js</code>): explicación breve la primera vez que se entra a cada sección en una sesión.</li>
+</ul>
+<hr>
+<h2 id="t-9-integraciones-externas">9. Integraciones externas</h2>
+<h3 id="t-91-supabase">9.1 Supabase</h3>
+<ul>
+<li>Cliente: <code>src/lib/supabase.js</code> (<code>createClient(VITE_SUPABASE_URL, VITE_SUPABASE_PUBLISHABLE_KEY)</code>).</li>
+<li>Servicios usados: Auth (email + contraseña) y Data API (PostgREST). No se usan Storage, Realtime ni Edge Functions.</li>
+</ul>
+<h3 id="t-92-emailjs-srcutilsemailservicejs">9.2 EmailJS (<code>src/utils/emailService.js</code>)</h3>
+<div class="table-wrap"><table><thead><tr>
+<th>Función</th>
+<th>Dónde se usa</th>
+<th>Plantilla</th>
+</tr>
+</thead><tbody><tr>
+<td><code>sendAppointmentConfirmation</code></td>
+<td>Agenda → modal de cita</td>
+<td><code>VITE_EMAILJS_TEMPLATE_CONFIRM</code></td>
+</tr>
+<tr>
+<td><code>sendAppointmentReminder</code></td>
+<td>(disponible, sin botón en la UI)</td>
+<td><code>VITE_EMAILJS_TEMPLATE_REMINDER</code></td>
+</tr>
+<tr>
+<td><code>sendPatientFormLink</code></td>
+<td>Ficha del paciente → &quot;Enviar Formulario&quot;</td>
+<td><code>VITE_EMAILJS_TEMPLATE_FORM</code></td>
+</tr>
+<tr>
+<td><code>sendBudgetEmail</code></td>
+<td>Presupuesto</td>
+<td><code>VITE_EMAILJS_TEMPLATE_BUDGET</code></td>
+</tr>
+</tbody></table></div>
+<ul>
+<li>El enlace del formulario es <code>https://&lt;sitio&gt;/paciente/ficha/&lt;patientId&gt;?c=&lt;clinic_id&gt;</code>. <strong>El parámetro <code>c</code> es obligatorio</strong>: sin él el formulario no se puede enviar.</li>
+<li>La librería se carga solo cuando se envía un correo. Plan gratuito: 200 correos/mes.</li>
+<li><strong>Inconsistencia:</strong> el valor por defecto de la plantilla del formulario en el código es <code>template_form</code>, pero <code>.env.example</code> usa <code>template_form_link</code>. Definir siempre la variable.</li>
+</ul>
+<h3 id="t-93-pdf">9.3 PDF</h3>
+<ul>
+<li>Presupuesto: <code>BudgetWithPDF.jsx</code> clona el nodo a 794 px (A4), lo captura con html2canvas y lo pagina con jsPDF.</li>
+<li>Informes: <code>ConstructorInformeMejorado.jsx</code> usa html2pdf.js.</li>
+</ul>
+<h3 id="t-94-no-implementado">9.4 No implementado</h3>
+<ul>
+<li><strong>Link de pago</strong> (Dashboard): genera una URL de ejemplo (<code>https://clinicplus.com/pay/…</code>) sin pasarela real. No cobra.</li>
+<li>Sin facturación electrónica, pasarelas de pago, DICOM ni integraciones con aseguradoras.</li>
+</ul>
+<hr>
+<h2 id="t-10-configuracion-y-variables-de-entorno">10. Configuración y variables de entorno</h2>
+<p>Vite incrusta las variables <code>VITE_*</code> en el bundle al compilar: <strong>cambiar una exige volver a desplegar</strong> (en local, reiniciar <code>npm run dev</code>). Todas son públicas por diseño; no poner secretos en variables <code>VITE_*</code>.</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Variable</th>
+<th>Obligatoria</th>
+<th>Uso</th>
+</tr>
+</thead><tbody><tr>
+<td><code>VITE_SUPABASE_URL</code></td>
+<td><strong>Sí</strong></td>
+<td><code>https://elsgbeupmvsqwkdiineb.supabase.co</code></td>
+</tr>
+<tr>
+<td><code>VITE_SUPABASE_PUBLISHABLE_KEY</code></td>
+<td><strong>Sí</strong></td>
+<td>Clave publicable (<code>sb_publishable_…</code>). Segura en el navegador; la protección la da RLS</td>
+</tr>
+<tr>
+<td><code>VITE_EMAILJS_SERVICE_ID</code></td>
+<td>Para correos</td>
+<td>Servicio de EmailJS</td>
+</tr>
+<tr>
+<td><code>VITE_EMAILJS_PUBLIC_KEY</code></td>
+<td>Para correos</td>
+<td>Clave pública de EmailJS</td>
+</tr>
+<tr>
+<td><code>VITE_EMAILJS_TEMPLATE_CONFIRM</code></td>
+<td>Para correos</td>
+<td>Confirmación de cita</td>
+</tr>
+<tr>
+<td><code>VITE_EMAILJS_TEMPLATE_REMINDER</code></td>
+<td>Para correos</td>
+<td>Recordatorio</td>
+</tr>
+<tr>
+<td><code>VITE_EMAILJS_TEMPLATE_FORM</code></td>
+<td>Para correos</td>
+<td>Enlace al formulario del paciente</td>
+</tr>
+<tr>
+<td><code>VITE_EMAILJS_TEMPLATE_BUDGET</code></td>
+<td>Para correos</td>
+<td>Presupuesto</td>
+</tr>
+</tbody></table></div>
+<p><strong>Eliminadas:</strong> <code>VITE_ADMIN_USER</code>, <code>VITE_ADMIN_PASSWORD_HASH</code>, <code>VITE_SETUP_USER</code>, <code>VITE_SETUP_PASSWORD_HASH</code>. Ya no se usan; se pueden borrar de Vercel.</p>
+<p>Archivos: <code>.env</code> (local, no se versiona) y <code>.env.example</code> (plantilla versionada).</p>
+<p><strong>Nunca</strong> poner la clave <code>service_role</code> / secreta de Supabase en el frontend: salta todas las reglas RLS.</p>
+<hr>
+<h2 id="t-11-desarrollo-local-build-y-despliegue">11. Desarrollo local, build y despliegue</h2>
+<h3 id="t-111-requisitos">11.1 Requisitos</h3>
+<ul>
+<li>Node.js 20 o superior (probado con 22) y npm.</li>
+</ul>
+<h3 id="t-112-puesta-en-marcha">11.2 Puesta en marcha</h3>
+<div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>git clone https://github.com/lemarealejandro/MCVD.git</code></pre></div>
+<div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>cd MCVD &amp;&amp; npm install</code></pre></div>
+<div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>cp .env.example .env</code></pre></div>
+<p>Completar las variables de EmailJS en <code>.env</code> si se van a enviar correos, y luego:</p>
+<div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>npm run dev</code></pre></div>
+<p>La app queda en <code>http://localhost:5173</code>. Se trabaja <strong>contra la base de producción</strong> de Supabase (no hay entorno local separado; ver §15).</p>
+<h3 id="t-113-calidad-y-build">11.3 Calidad y build</h3>
+<div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>npm run lint</code></pre></div>
+<div class="code"><div class="code-bar"><span>bash</span><button type="button" class="copy">Copiar</button></div><pre><code>npm run build</code></pre></div>
+<p>El build genera <code>dist/</code>. <code>npm run preview</code> lo sirve en local.</p>
+<h3 id="t-114-despliegue-en-vercel">11.4 Despliegue en Vercel</h3>
+<ol>
+<li>En <em>Project Settings → Environment Variables</em>, definir todas las variables de §10 (al menos las dos de Supabase).</li>
+<li>Desplegar la rama. <code>vercel.json</code> reescribe cualquier ruta a <code>index.html</code> para que funcionen las rutas de React Router.</li>
+<li>En Supabase, poner la URL de producción en <em>Authentication → URL Configuration</em>.</li>
+</ol>
+<hr>
+<h2 id="t-12-operacion-usuarios-clinicas-y-migraciones">12. Operación: usuarios, clínicas y migraciones</h2>
+<p>Estas tareas se hacen en el panel de Supabase (<strong>SQL Editor</strong> para el SQL) o pidiéndoselas a Claude Code, que tiene acceso por MCP (ver §13).</p>
+<h3 id="t-121-dar-acceso-a-una-persona">12.1 Dar acceso a una persona</h3>
+<ol>
+<li>Crear el usuario: <em>Authentication → Users → Add user → Create new user</em> (correo + contraseña, marcar <em>Auto Confirm User</em>), o <em>Send invitation</em> para que elija su contraseña.</li>
+<li>Asignarlo a una clínica:</li>
+</ol>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>insert into public.clinic_members (clinic_id, user_id, role)
+select '6736ae2a-6ab1-4ef4-9e52-876258092f19', id, 'staff'
+from auth.users where email = 'persona@ejemplo.com';</code></pre></div>
+<p>(Usar <code>28c51a1a-cacc-463b-a946-009f1a328fdb</code> para Demo MCVD; <code>owner</code> en lugar de <code>staff</code> para responsables.)</p>
+<h3 id="t-122-quitar-acceso">12.2 Quitar acceso</h3>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>delete from public.clinic_members
+where user_id = (select id from auth.users where email = 'persona@ejemplo.com');</code></pre></div>
+<p>Para bloquear del todo, eliminar también el usuario en <em>Authentication → Users</em>.</p>
+<h3 id="t-123-restablecer-una-contrasena">12.3 Restablecer una contraseña</h3>
+<p><em>Authentication → Users →</em> (usuario) <em>→ Send password recovery</em>. La app no tiene todavía pantalla de &quot;olvidé mi contraseña&quot; propia; el enlace del correo lleva a la <em>Site URL</em> configurada.</p>
+<h3 id="t-124-crear-otra-clinica">12.4 Crear otra clínica</h3>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>insert into public.clinics (name, demo_data) values ('Nueva Clínica', false) returning id;</code></pre></div>
+<p>Después asignar usuarios con el <code>id</code> devuelto (§12.1).</p>
+<h3 id="t-125-ver-las-fichas-enviadas-por-pacientes">12.5 Ver las fichas enviadas por pacientes</h3>
+<p>No hay pantalla en la app todavía. En <em>Table Editor → patient_form_submissions</em>, o:</p>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>select submitted_at, patient_ref, data-&gt;&gt;'name' as nombre, data-&gt;&gt;'phone' as telefono, data
+from public.patient_form_submissions
+where clinic_id = '6736ae2a-6ab1-4ef4-9e52-876258092f19' and reviewed_at is null
+order by submitted_at desc;</code></pre></div>
+<p>Marcar como revisada:</p>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>update public.patient_form_submissions set reviewed_at = now() where id = '&lt;id&gt;';</code></pre></div>
+<h3 id="t-126-copias-de-seguridad">12.6 Copias de seguridad</h3>
+<p>Supabase hace copias diarias según el plan contratado (<em>Database → Backups</em>). Para una copia manual de los datos de una clínica:</p>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>select collection, value, updated_at
+from public.clinic_data where clinic_id = '6736ae2a-6ab1-4ef4-9e52-876258092f19';</code></pre></div>
+<p>Exportar el resultado a CSV/JSON desde el SQL Editor.</p>
+<h3 id="t-127-cambios-de-esquema">12.7 Cambios de esquema</h3>
+<ul>
+<li>Cada cambio va en un archivo nuevo en <code>supabase/migrations/</code> con prefijo de fecha <code>YYYYMMDDHHMMSS_descripcion.sql</code>, y se aplica en el proyecto (SQL Editor, CLI de Supabase o Claude Code por MCP).</li>
+<li>Toda tabla nueva en <code>public</code> debe tener RLS activado y políticas antes de usarse.</li>
+<li>Después de cada cambio, revisar <em>Advisors → Security</em> en Supabase.</li>
+</ul>
+<hr>
+<h3 id="t-128-registro-de-clinicas-nuevas-autoservicio-con-aprobacion">12.8 Registro de clínicas nuevas (autoservicio con aprobación)</h3>
+<p>Flujo:</p>
+<ol>
+<li>La persona entra a <code>/registro</code> (enlace &quot;Solicita acceso&quot; en el login) y escribe clínica, nombre, teléfono, correo y contraseña.</li>
+<li>La Edge Function <strong><code>clinic-signup</code></strong> (pública, <code>verify_jwt = false</code>):<ul>
+<li>valida los datos (contraseña de 8 a 72 caracteres) y limita a 20 solicitudes por hora;</li>
+<li>crea el usuario en Supabase Auth con su contraseña (<code>email_confirm: true</code>, porque la aprobación manual reemplaza la confirmación de correo);</li>
+<li>guarda la fila en <strong><code>clinic_requests</code></strong> con <code>status = &#39;pending&#39;</code> y el <strong>sha256</strong> de un código aleatorio de 64 caracteres;</li>
+<li>envía un correo a <code>ADMIN_EMAIL</code> (por defecto <a href="mailto:lemarealejandro@gmail.com">lemarealejandro@gmail.com</a>) con el enlace <code>APP_URL/aprobar-clinica?id=…&amp;token=…</code>.</li>
+</ul>
+</li>
+<li>El administrador abre el enlace. La página <code>/aprobar-clinica</code> llama a la Edge Function <strong><code>clinic-approval</code></strong> (<code>view</code>, <code>approve</code> o <code>reject</code>), que comprueba el código contra el hash (comparación en tiempo constante, vence a los 30 días).</li>
+<li>Al aprobar, la función SQL <code>public.approve_clinic_request(id)</code> crea la clínica (<code>demo_data = false</code>), asigna al usuario como <code>owner</code> y marca la solicitud <code>approved</code>, todo en una transacción.</li>
+<li>Desde ese momento la persona entra en <code>/login</code> con su correo y contraseña. Antes de la aprobación el login muestra &quot;pendiente de aprobación&quot;.</li>
+</ol>
+<p>Tabla <code>clinic_requests</code>: <code>id</code>, <code>user_id</code> (único), <code>clinic_name</code>, <code>contact_name</code>, <code>phone</code>, <code>email</code>, <code>status</code> (<code>pending</code>/<code>approved</code>/<code>rejected</code>), <code>token_hash</code>, <code>token_expires_at</code>, <code>clinic_id</code>, <code>notified_at</code>, <code>created_at</code>, <code>reviewed_at</code>. RLS: el usuario solo lee su propia solicitud y nunca la columna <code>token_hash</code>; nadie escribe desde el navegador.</p>
+<p>Secretos de las Edge Functions (<em>Edge Functions → Secrets</em>):</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Secreto</th>
+<th>Obligatorio</th>
+<th>Uso</th>
+</tr>
+</thead><tbody><tr>
+<td><code>RESEND_API_KEY</code></td>
+<td>Sí, para el correo</td>
+<td>Clave de <a href="https://resend.com" target="_blank" rel="noopener">Resend</a>. Sin ella la solicitud se guarda pero no llega correo</td>
+</tr>
+<tr>
+<td><code>APP_URL</code></td>
+<td>Recomendado</td>
+<td>URL pública de la app (p. ej. <code>https://mcvd.vercel.app</code>) para el enlace de aprobación</td>
+</tr>
+<tr>
+<td><code>ADMIN_EMAIL</code></td>
+<td>No</td>
+<td>Destinatario de las solicitudes</td>
+</tr>
+<tr>
+<td><code>RESEND_FROM</code></td>
+<td>No</td>
+<td>Remitente con dominio verificado en Resend. Sin él se usa <code>onboarding@resend.dev</code>, que solo puede enviar al correo dueño de la cuenta de Resend, y no se avisa al solicitante</td>
+</tr>
+</tbody></table></div>
+<p>Código: <code>supabase/functions/clinic-signup/</code>, <code>supabase/functions/clinic-approval/</code>, <code>supabase/migrations/20261118170000_clinic_requests.sql</code>, <code>src/pages/Registro.jsx</code>, <code>src/pages/AprobarClinica.jsx</code>.</p>
+<p>Ver solicitudes pendientes sin correo:</p>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>select created_at, clinic_name, contact_name, email, phone, notified_at
+from public.clinic_requests where status = 'pending' order by created_at desc;</code></pre></div>
+<p>Aprobar a mano (SQL Editor):</p>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>select public.approve_clinic_request('&lt;id de la solicitud&gt;');</code></pre></div>
+<h3 id="t-129-panel-de-administracion-de-la-plataforma">12.9 Panel de administración de la plataforma</h3>
+<p>Ruta <code>/plataforma</code>. Lo usan los <strong>administradores de la plataforma</strong> (tabla <code>platform_admins</code>), que no necesitan pertenecer a una clínica.</p>
+<ul>
+<li><strong>Login:</strong> <code>login()</code> comprueba también <code>platform_admins</code>. Si el usuario es administrador y no tiene clínica, entra directo a <code>/plataforma</code>. Si además tiene clínica, entra a su clínica y ve el enlace <strong>Administración</strong> en el menú lateral.</li>
+<li><strong>Qué muestra:</strong> contadores (solicitudes pendientes, clínicas, usuarios), las solicitudes con botones <strong>Aprobar / Rechazar</strong> y la lista de clínicas con sus usuarios (rol y último ingreso) y la fecha de la última modificación de datos.</li>
+<li><strong>Qué NO muestra:</strong> pacientes ni ningún dato clínico. El administrador no es miembro de las clínicas y RLS le impide leer <code>clinic_data</code> y <code>patient_form_submissions</code>.</li>
+</ul>
+<p>Base de datos (migración <code>20261118180000_platform_admins.sql</code>):</p>
+<div class="table-wrap"><table><thead><tr>
+<th>Objeto</th>
+<th>Descripción</th>
+</tr>
+</thead><tbody><tr>
+<td><code>public.platform_admins(user_id, created_at)</code></td>
+<td>Administradores. RLS: cada usuario solo puede ver su propia fila</td>
+</tr>
+<tr>
+<td><code>private.is_platform_admin()</code></td>
+<td><code>security definer</code>: ¿el usuario actual es administrador?</td>
+</tr>
+<tr>
+<td><code>public.admin_overview()</code></td>
+<td>Devuelve <code>{ requests, clinics }</code> en JSON. Rechaza (<code>42501</code>) a quien no sea administrador</td>
+</tr>
+<tr>
+<td><code>public.admin_review_clinic_request(req_id, decision)</code></td>
+<td><code>decision</code> = <code>approve</code> o <code>reject</code>. Rechaza a quien no sea administrador; no revisa dos veces la misma solicitud</td>
+</tr>
+</tbody></table></div>
+<p>El asesor de Supabase avisa que estas dos funciones son <code>security definer</code> ejecutables por <code>authenticated</code>: es intencional, porque ambas comprueban <code>is_platform_admin()</code> antes de hacer nada. Se probaron 10 casos (usuario normal, administrador y anónimo) el 2026-11-18.</p>
+<p>Al aprobar desde el panel <strong>no se envía correo</strong> al solicitante (igual que desde el enlace del correo sin dominio propio en Resend): hay que avisarle.</p>
+<p><strong>Dar o quitar el rol de administrador</strong> (SQL Editor):</p>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>insert into public.platform_admins (user_id)
+select id from auth.users where email = 'persona@ejemplo.com';</code></pre></div>
+<div class="code"><div class="code-bar"><span>sql</span><button type="button" class="copy">Copiar</button></div><pre><code>delete from public.platform_admins
+where user_id = (select id from auth.users where email = 'persona@ejemplo.com');</code></pre></div>
+<hr>
+<h2 id="t-13-herramientas-para-claude-code">13. Herramientas para Claude Code</h2>
+<ul>
+<li><strong><code>.mcp.json</code></strong>: registra el servidor MCP de Supabase (<code>https://mcp.supabase.com/mcp?project_ref=elsgbeupmvsqwkdiineb&amp;…</code>). Permite a Claude Code consultar tablas, aplicar migraciones, revisar logs y advisors. En local requiere autenticarse una vez con <code>/mcp</code> → <em>supabase</em> → <em>Authenticate</em>. En sesiones de Claude Code en la nube se usa el conector de Supabase de claude.ai.</li>
+<li><strong><code>.claude/skills/</code></strong>: skills oficiales de Supabase (<code>supabase</code>, <code>supabase-postgres-best-practices</code>) con buenas prácticas de esquema, RLS y rendimiento. Versiones fijadas en <code>skills-lock.json</code>.</li>
+</ul>
+<hr>
+<h2 id="t-14-limitaciones-conocidas">14. Limitaciones conocidas</h2>
+<h3 id="t-141-datos-y-concurrencia">14.1 Datos y concurrencia</h3>
+<ol>
+<li><strong>Última escritura gana:</strong> dos personas editando la misma sección a la vez pueden pisarse cambios (§5.3).</li>
+<li><strong>Sin tiempo real:</strong> los cambios de otra persona se ven al recargar o volver a entrar a la pantalla.</li>
+<li><strong>Errores de guardado silenciosos:</strong> si falla la conexión, el cambio queda solo en la caché local del navegador y se registra en consola, sin aviso visible.</li>
+<li><strong>Imágenes y firmas en base64</strong> dentro de <code>clinicplus_patients</code> y <code>clinicplus_estudios</code>: hacen crecer la colección. Deberían ir a Supabase Storage.</li>
+<li><strong>Presupuesto sin persistencia:</strong> los ítems del presupuesto (<code>TreatmentsTab</code> → <code>budgetItems</code>) viven solo en memoria y se pierden al salir de la ficha.</li>
+<li><strong>Informes radiológicos con datos de ejemplo</strong> (<code>mockInformes</code>): no se crean ni guardan desde la app.</li>
+<li><strong>Citas sin sucursal:</strong> los reportes no pueden filtrar citas por sede.</li>
+</ol>
+<h3 id="t-142-funcionalidad">14.2 Funcionalidad</h3>
+<ol start="8">
+<li><strong>Sin pantalla para fichas de pacientes recibidas</strong> (se ven en Supabase, §12.5).</li>
+<li><strong>Sin &quot;olvidé mi contraseña&quot;</strong> en la app. Las clínicas nuevas se registran solas con aprobación (§12.8), pero agregar más personas a una clínica existente sigue siendo manual (§12.1).</li>
+<li><strong>Roles sin efecto dentro de la clínica:</strong> <code>owner</code> y <code>staff</code> tienen los mismos permisos. El único rol distinto es el de administrador de la plataforma (§12.9).</li>
+<li><strong>Un usuario = una clínica activa</strong> (sin selector).</li>
+<li><strong>Link de pago simulado</strong> (§9.4).</li>
+<li><strong>Enlaces de formulario antiguos</strong> (sin <code>?c=</code>) no permiten enviar.</li>
+</ol>
+<h3 id="t-143-calidad">14.3 Calidad</h3>
+<ol start="14">
+<li><strong>Sin pruebas automatizadas</strong> de frontend; solo <code>lint</code> y <code>build</code>. Las pruebas de RLS de §6.3 se ejecutaron a mano.</li>
+<li><strong>Sin entorno de staging:</strong> desarrollo y producción usan la misma base.</li>
+<li><strong>Estilos mezclados</strong> (CSS global, inline y Tailwind) y <strong>dos librerías de PDF</strong>.</li>
+</ol>
+<hr>
+<h2 id="t-15-proximos-pasos-recomendados">15. Próximos pasos recomendados</h2>
+<p>En orden de impacto:</p>
+<ol>
+<li><strong>Pantalla de fichas recibidas</strong> en la app (leer <code>patient_form_submissions</code>, importar al paciente, marcar revisada).</li>
+<li><strong>Aviso visible de errores de guardado</strong> y estado &quot;guardando / guardado&quot;.</li>
+<li><strong>Recuperación de contraseña</strong> en la pantalla de login (<code>supabase.auth.resetPasswordForEmail</code>).</li>
+<li><strong>Archivos a Supabase Storage</strong> (firmas, imágenes de estudios, PDFs) con políticas por clínica.</li>
+<li><strong>Normalizar pacientes y citas</strong> en tablas propias (hay una propuesta completa, con roles por clínica, auditoría y Storage, en <a href="https://github.com/lemarealejandro/MCVD/blob/claude/compassionate-hamilton-iuz1kp/docs/backend-normalizado-propuesta/LEEME.md" target="_blank" rel="noopener"><code>docs/backend-normalizado-propuesta/</code></a>; no está aplicada) cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.</li>
+<li><strong>Proyecto de staging</strong> en Supabase (o <em>branching</em>) para probar migraciones antes de producción.</li>
+<li><strong>Pruebas automatizadas</strong> de aislamiento entre clínicas (RLS) en CI.</li>
+<li>Revisión legal de cumplimiento para datos de salud (ficha clínica, protección de datos personales, contrato de encargo de tratamiento con los proveedores: Supabase, Vercel, EmailJS).</li>
+</ol>
+<hr>
+<h2 id="t-16-glosario">16. Glosario</h2>
+<ul>
+<li><strong>Clínica / tenant:</strong> organización con datos aislados (<code>clinics</code>).</li>
+<li><strong>Miembro:</strong> usuario de Supabase Auth asignado a una clínica (<code>clinic_members</code>).</li>
+<li><strong>Colección:</strong> cada conjunto de datos de la app (pacientes, citas…), guardado como una fila de <code>clinic_data</code>.</li>
+<li><strong>RLS (Row Level Security):</strong> reglas de PostgreSQL que filtran qué filas puede leer o escribir cada usuario.</li>
+<li><strong>Clave publicable:</strong> clave de Supabase pensada para el navegador; por sí sola no da acceso a datos protegidos por RLS.</li>
+<li><strong><code>service_role</code> / clave secreta:</strong> clave de administrador de Supabase que ignora RLS. Nunca debe ir al frontend.</li>
+<li><strong>MCP:</strong> <em>Model Context Protocol</em>; permite a Claude Code operar sobre Supabase.</li>
+</ul>
+
+  </main>
+</div>
+
+<script>
+(() => {
+  const views = [...document.querySelectorAll('.wrap[data-view]')];
+  const tabs = [...document.querySelectorAll('.tab')];
+
+  function show(name) {
+    views.forEach(v => { v.hidden = v.dataset.view !== name; });
+    tabs.forEach(t => { if (t.dataset.doc === name) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current'); });
+  }
+
+  function route() {
+    const id = decodeURIComponent(location.hash.slice(1));
+    if (id === 'tecnica' || id === 'manual' || !id) {
+      show(id || 'manual');
+      window.scrollTo(0, 0);
+      return;
+    }
+    const el = document.getElementById(id);
+    if (!el) { show('manual'); return; }
+    show(el.closest('.wrap').dataset.view);
+    requestAnimationFrame(() => el.scrollIntoView());
+  }
+  window.addEventListener('hashchange', route);
+  route();
+
+  // Resalta en el índice la sección visible
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (!e.isIntersecting) return;
+      const wrap = e.target.closest('.wrap');
+      wrap.querySelectorAll('.toc a').forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + e.target.id));
+    });
+  }, { rootMargin: '-90px 0px -70% 0px' });
+  document.querySelectorAll('.doc h2[id]').forEach(h => io.observe(h));
+
+  // Copiar bloques de código
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.copy');
+    if (!btn) return;
+    const code = btn.closest('.code').querySelector('code');
+    const done = () => { btn.textContent = 'Copiado'; setTimeout(() => { btn.textContent = 'Copiar'; }, 1600); };
+    const fallback = () => {
+      const r = document.createRange(); r.selectNodeContents(code);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = 'Seleccionado: Ctrl+C';
+    };
+    try { navigator.clipboard.writeText(code.textContent).then(done, fallback); } catch { fallback(); }
+  });
+})();
+</script>
+</body>
+</html>
