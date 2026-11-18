@@ -9,6 +9,7 @@ import SignatureCanvas from '../../components/clinical/SignatureCanvas';
 import { sendPatientFormLink } from '../../utils/emailService';
 import { nuevoIdPaciente } from '../../utils/pacienteDesdeCita';
 import { enviarAPlan, dientesPendientes } from '../../utils/planTratamiento';
+import { VIGENCIA_HORAS, formatearFechaHora, presupuestoVencido, totalPresupuesto } from '../../utils/presupuesto';
 
 const PatientHistory = () => {
   const { id } = useParams();
@@ -184,7 +185,26 @@ const PatientHistory = () => {
                   <li>Autorizo al profesional tratante y a su equipo a realizarme los tratamientos necesarios según su criterio clínico.</li>
                   <li>Comprendo que puedo revocar este consentimiento en cualquier momento antes de que comience el procedimiento.</li>
                   <li>Declaro que la información médica proporcionada es verídica y completa.</li>
+                  <li>He sido informado(a) de que el presupuesto de tratamiento tiene una vigencia de {VIGENCIA_HORAS} horas desde su emisión. Vencido ese plazo, los precios y procedimientos deben revalidarse antes de iniciar cualquier tratamiento.</li>
                 </ol>
+                {patient.presupuesto && (
+                  <div className="consent-presupuesto">
+                    <h4>Presupuesto de tratamiento</h4>
+                    <p>
+                      Emitido el {formatearFechaHora(patient.presupuesto.creadoEn)}. Vence el {formatearFechaHora(patient.presupuesto.vencimiento)}
+                      {presupuestoVencido(patient.presupuesto) ? ' (vencido)' : ''}.
+                    </p>
+                    <ul>
+                      {patient.presupuesto.items.map(i => (
+                        <li key={i.id}>{i.name} × {i.qty} — ${(Number(i.priceUSD) * i.qty).toFixed(2)} USD</li>
+                      ))}
+                    </ul>
+                    {(() => {
+                      const { usd, ves } = totalPresupuesto(patient.presupuesto.items, patient.presupuesto.tasa);
+                      return <p><strong>Total: ${usd.toFixed(2)} USD · Bs. {ves.toLocaleString('es-VE', { maximumFractionDigits: 2 })} (tasa {patient.presupuesto.tasa})</strong></p>;
+                    })()}
+                  </div>
+                )}
                 <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                   Fecha: {new Date().toLocaleDateString('es-VE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                 </p>
