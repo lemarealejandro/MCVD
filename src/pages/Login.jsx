@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Lock, Mail } from 'lucide-react';
-import { isAuthenticated, login } from '../utils/auth';
+import { isAuthenticated, isPlatformAdmin, login } from '../utils/auth';
 import './auth.css';
 
 const Login = () => {
@@ -20,13 +20,14 @@ const Login = () => {
     const result = await login(email, password);
     setSubmitting(false);
     if (result.success) {
-      navigate(destination, { replace: true });
+      navigate(result.destination || destination, { replace: true });
     } else {
       setError(result.error);
     }
   };
 
   if (isAuthenticated()) return <Navigate to={destination} replace />;
+  if (isPlatformAdmin()) return <Navigate to="/plataforma" replace />;
 
   return (
     <div className="login-container">

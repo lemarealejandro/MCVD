@@ -7,6 +7,13 @@ import { COACH_SEEN_KEY } from '../data/sectionHelp';
 // Estado en memoria: sesión de Supabase + clínica del usuario.
 let session = null;
 let membership = null; // { clinicId, clinicName, demoData, role }
+let platformAdmin = false; // administrador de la plataforma (tabla platform_admins)
+
+async function loadPlatformAdmin() {
+  const { data, error } = await supabase.from('platform_admins').select('user_id').maybeSingle();
+  if (error) throw error;
+  return Boolean(data);
+}
 
 async function loadMembership() {
   const { data, error } = await supabase
@@ -31,23 +38,28 @@ export async function initAuth() {
     const { data } = await supabase.auth.getSession();
     session = data.session;
     membership = session ? await loadMembership() : null;
+    platformAdmin = session ? await loadPlatformAdmin() : false;
   } catch (error) {
     console.error('No se pudo recuperar la sesión:', error);
     session = null;
     membership = null;
+    platformAdmin = false;
   }
 
   supabase.auth.onAuthStateChange((event, newSession) => {
     session = newSession;
-    // Sesión expirada o cerrada en otra pestaña (logout() ya limpió membership antes).
-    if (event === 'SIGNED_OUT' && membership) {
+    // Sesión expirada o cerrada en otra pestaña (logout() ya limpió el estado antes).
+    if (event === 'SIGNED_OUT' && (membership || platformAdmin)) {
       membership = null;
-      if (window.location.pathname.startsWith('/admin')) window.location.assign('/login');
+      platformAdmin = false;
+      const path = window.location.pathname;
+      if (path.startsWith('/admin') || path.startsWith('/plataforma')) window.location.assign('/login');
     }
   });
 }
 
 export const isAuthenticated = () => Boolean(session && membership);
+export const isPlatformAdmin = () => Boolean(session && platformAdmin);
 
 // Clínicas sin datos de ejemplo arrancan con todo en cero (antes: "cuenta secundaria").
 export const isSetupAccount = () => Boolean(membership && !membership.demoData);
@@ -71,6 +83,15 @@ export async function login(email, password) {
     await supabase.auth.signOut();
     return { success: false, error: `No se pudo cargar tu clínica: ${loadError.message}` };
   }
+  try {
+    platformAdmin = await loadPlatformAdmin();
+  } catch {
+    platformAdmin = false;
+  }
+  if (!membership && platformAdmin) {
+    sessionStorage.removeItem(COACH_SEEN_KEY);
+    return { success: true, destination: '/plataforma' };
+  }
   if (!membership) {
     const { data: request } = await supabase
       .from('clinic_requests')
@@ -93,6 +114,7 @@ export async function login(email, password) {
 
 export async function logout() {
   membership = null;
+  platformAdmin = false;
   session = null;
   await supabase.auth.signOut();
 }
