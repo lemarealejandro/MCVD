@@ -226,6 +226,14 @@ td code { white-space: nowrap; }
 <li>Completa <strong>Paciente</strong>, <strong>Fecha</strong>, <strong>Hora</strong> y <strong>Servicio</strong> (obligatorios), y si quieres doctor/profesional, duración, teléfono, email y notas.</li>
 <li>Pulsa guardar.</li>
 </ol>
+<h3 id="m-ficha-del-paciente-automatica-al-confirmar">Ficha del paciente automática al confirmar</h3>
+<p>Al <strong>confirmar</strong> una cita (en el formulario o cambiando su estado a <strong>Confirmada</strong>), el sistema crea la ficha del paciente o la vincula a una existente:</p>
+<ul>
+<li>Busca primero por <strong>RUT</strong>, sin importar puntos ni guion (<code>15.234.567-8</code> y <code>152345678</code> son el mismo).</li>
+<li>Sin RUT, solo vincula por nombre si hay un único paciente con ese nombre.</li>
+<li>Si la ficha ya existe, solo completa los datos que estaban vacíos; no reemplaza nada.</li>
+</ul>
+<p>Por eso el formulario de la cita pide además <strong>RUT</strong>, <strong>fecha de nacimiento</strong>, <strong>género</strong> y <strong>dirección</strong>.</p>
 <h3 id="m-enviar-confirmacion-por-correo">Enviar confirmación por correo</h3>
 <p>En el formulario de la cita, escribe el <strong>Email del Paciente</strong> y pulsa <strong>Enviar Confirmación</strong>. Verás &quot;Correo enviado exitosamente&quot; si salió bien.</p>
 <h3 id="m-editar-o-eliminar">Editar o eliminar</h3>
@@ -1505,7 +1513,7 @@ where user_id = (select id from auth.users where email = 'persona@ejemplo.com');
 <li><strong>Aviso visible de errores de guardado</strong> y estado &quot;guardando / guardado&quot;.</li>
 <li><strong>Recuperación de contraseña</strong> en la pantalla de login (<code>supabase.auth.resetPasswordForEmail</code>).</li>
 <li><strong>Archivos a Supabase Storage</strong> (firmas, imágenes de estudios, PDFs) con políticas por clínica.</li>
-<li><strong>Normalizar pacientes y citas</strong> en tablas propias cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.</li>
+<li><strong>Normalizar pacientes y citas</strong> en tablas propias (hay una propuesta completa, con roles por clínica, auditoría y Storage, en <a href="https://github.com/lemarealejandro/MCVD/blob/claude/compassionate-hamilton-iuz1kp/docs/backend-normalizado-propuesta/LEEME.md" target="_blank" rel="noopener"><code>docs/backend-normalizado-propuesta/</code></a>; no está aplicada) cuando crezca el uso o haya varias personas editando a la vez; añadir auditoría de cambios en fichas clínicas.</li>
 <li><strong>Proyecto de staging</strong> en Supabase (o <em>branching</em>) para probar migraciones antes de producción.</li>
 <li><strong>Pruebas automatizadas</strong> de aislamiento entre clínicas (RLS) en CI.</li>
 <li>Revisión legal de cumplimiento para datos de salud (ficha clínica, protección de datos personales, contrato de encargo de tratamiento con los proveedores: Supabase, Vercel, EmailJS).</li>

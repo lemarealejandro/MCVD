@@ -3,6 +3,7 @@ import { Plus, Search, Edit2, Trash2, ChevronLeft, ChevronRight, Calendar, List,
 import { useOutletContext } from 'react-router-dom';
 import { sendAppointmentConfirmation } from '../../utils/emailService';
 import { localDateStr } from '../../utils/date';
+import { asegurarPacienteDeCita, faltantesParaConfirmar, nuevoIdPaciente } from '../../utils/pacienteDesdeCita';
 
 const SERVICES = [
   'Consulta General', 'Limpieza Dental', 'Extracción Simple', 'Extracción Quirúrgica',
@@ -26,7 +27,8 @@ const MONTHS_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Ago
 const emptyAppointment = () => ({
   id: null, patient: '', patientEmail: '', patientPhone: '',
   service: 'Consulta General', date: localDateStr(),
-  time: '09:00', duration: 60, status: 'Pendiente', notes: '', doctor: ''
+  time: '09:00', duration: 60, status: 'Pendiente', notes: '', doctor: '',
+  patientId: null, patientRut: '', patientDob: '', patientGender: '', patientAddress: '',
 });
 
 const AppointmentModal = ({ apt, onSave, onClose, patients = {} }) => {
@@ -41,9 +43,15 @@ const AppointmentModal = ({ apt, onSave, onClose, patients = {} }) => {
   const handlePatientSelect = (e) => {
     const patient = Object.values(patients).find(p => p.name === e.target.value);
     if (patient) {
-      setForm(f => ({ ...f, patient: patient.name, patientEmail: patient.email || '', patientPhone: patient.phone || '' }));
+      setForm(f => ({
+        ...f,
+        patient: patient.name, patientId: patient.id,
+        patientEmail: patient.email || '', patientPhone: patient.phone || '',
+        patientRut: patient.rut || '', patientDob: patient.dob || '',
+        patientGender: patient.gender || '', patientAddress: patient.address || '',
+      }));
     } else {
-      set('patient', e.target.value);
+      setForm(f => ({ ...f, patient: e.target.value, patientId: null }));
     }
   };
 
@@ -66,6 +74,13 @@ const AppointmentModal = ({ apt, onSave, onClose, patients = {} }) => {
     if (!form.patient || !form.date || !form.time) {
       setFormError('Complete paciente, fecha y hora.');
       return;
+    }
+    if (form.status === 'Confirmada') {
+      const faltan = faltantesParaConfirmar(form);
+      if (faltan.length) {
+        setFormError(`Para confirmar la cita falta: ${faltan.join(', ')}.`);
+        return;
+      }
     }
     onSave({ ...form, id: form.id || Date.now() });
     onClose();
@@ -124,6 +139,27 @@ const AppointmentModal = ({ apt, onSave, onClose, patients = {} }) => {
             <div className="mf">
               <label>Doctor / Profesional</label>
               <input value={form.doctor} onChange={e => set('doctor', e.target.value)} placeholder="Dr. Apellido" />
+            </div>
+            <div className="mf">
+              <label>RUT {form.status === 'Confirmada' && '*'}</label>
+              <input value={form.patientRut} onChange={e => set('patientRut', e.target.value)} placeholder="12.345.678-9" />
+            </div>
+            <div className="mf">
+              <label>Fecha de nacimiento</label>
+              <input type="date" value={form.patientDob} onChange={e => set('patientDob', e.target.value)} />
+            </div>
+            <div className="mf">
+              <label>Género</label>
+              <select value={form.patientGender} onChange={e => set('patientGender', e.target.value)}>
+                <option value="">Sin especificar</option>
+                <option>Femenino</option>
+                <option>Masculino</option>
+                <option>Otro</option>
+              </select>
+            </div>
+            <div className="mf">
+              <label>Dirección</label>
+              <input value={form.patientAddress} onChange={e => set('patientAddress', e.target.value)} placeholder="Calle, número, comuna" />
             </div>
             <div className="mf mf-full">
               <label>Notas</label>
@@ -197,7 +233,7 @@ const AppointmentModal = ({ apt, onSave, onClose, patients = {} }) => {
 
 const AgendaPage = () => {
   const today = new Date();
-  const { patients, appointments, setAppointments } = useOutletContext();
+  const { patients, setPatients, appointments, setAppointments } = useOutletContext();
 
   const [view, setView] = useState('list'); // 'list' | 'week'
   const [searchTerm, setSearchTerm] = useState('');
@@ -218,13 +254,35 @@ const AgendaPage = () => {
 
   const openNew = () => { setModalApt(emptyAppointment()); setShowModal(true); };
   const openEdit = (apt) => { setModalApt({ ...apt }); setShowModal(true); };
+  // Al confirmar una cita se crea (o se vincula) la ficha del paciente.
+  const vincularPaciente = (apt, nuevoId) => {
+    if (apt.status !== 'Confirmada') return apt;
+    const { patients: siguiente, patientId } = asegurarPacienteDeCita(patients, apt, nuevoId);
+    if (siguiente !== patients) setPatients(siguiente);
+    return { ...apt, patientId };
+  };
   const handleSave = (apt) => {
-    setAppointments(prev => prev.some(a => a.id === apt.id) ? prev.map(a => a.id === apt.id ? apt : a) : [...prev, apt]);
+    const final = vincularPaciente(apt, nuevoIdPaciente());
+    setAppointments(prev => prev.some(a => a.id === final.id) ? prev.map(a => a.id === final.id ? final : a) : [...prev, final]);
   };
   const handleDelete = (id) => {
     if (window.confirm('¿Eliminar esta cita?')) setAppointments(prev => prev.filter(a => a.id !== id));
   };
-  const changeStatus = (id, status) => setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  const changeStatus = (id, status) => {
+    const apt = appointments.find(a => a.id === id);
+    if (!apt) return;
+    if (status === 'Confirmada') {
+      const faltan = faltantesParaConfirmar(apt);
+      if (faltan.length) {
+        window.alert(`Para confirmar la cita falta: ${faltan.join(', ')}. Edite la cita y complete esos datos.`);
+        return;
+      }
+      const vinculada = vincularPaciente({ ...apt, status }, nuevoIdPaciente());
+      setAppointments(prev => prev.map(a => a.id === id ? vinculada : a));
+      return;
+    }
+    setAppointments(prev => prev.map(a => a.id === id ? { ...a, status } : a));
+  };
 
   // --- Week calendar helpers ---
   const weekDays = useMemo(() => Array.from({ length: 7 }, (_, i) => {

@@ -104,6 +104,16 @@ Menú: **Agenda**.
 2. Completa **Paciente**, **Fecha**, **Hora** y **Servicio** (obligatorios), y si quieres doctor/profesional, duración, teléfono, email y notas.
 3. Pulsa guardar.
 
+### Ficha del paciente automática al confirmar
+
+Al **confirmar** una cita (en el formulario o cambiando su estado a **Confirmada**), el sistema crea la ficha del paciente o la vincula a una existente:
+
+- Busca primero por **RUT**, sin importar puntos ni guion (`15.234.567-8` y `152345678` son el mismo).
+- Sin RUT, solo vincula por nombre si hay un único paciente con ese nombre.
+- Si la ficha ya existe, solo completa los datos que estaban vacíos; no reemplaza nada.
+
+Por eso el formulario de la cita pide además **RUT**, **fecha de nacimiento**, **género** y **dirección**.
+
 ### Enviar confirmación por correo
 
 En el formulario de la cita, escribe el **Email del Paciente** y pulsa **Enviar Confirmación**. Verás "Correo enviado exitosamente" si salió bien.
