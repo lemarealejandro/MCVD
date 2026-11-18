@@ -4,6 +4,7 @@ import { DENTAL_TREATMENTS } from '../../data/treatmentCatalog';
 import BudgetWithPDF from './BudgetWithPDF';
 import { localDateStr } from '../../utils/date';
 import { elegirProcedimiento, quitarDelPlan } from '../../utils/planTratamiento';
+import { calcularVencimiento, presupuestoVencido, formatearFechaHora, revalorarItems, VIGENCIA_HORAS } from '../../utils/presupuesto';
 
 const newId = () => Date.now();
 
@@ -14,13 +15,63 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
   const [activeSection, setActiveSection] = useState(seccionInicial); // 'history' | 'catalog' | 'plan' | 'budget'
   const [openCategories, setOpenCategories] = useState({});
   const [search, setSearch] = useState('');
-  const [budgetItems, setBudgetItems] = useState([]);
-  const [exchangeRate, setExchangeRate] = useState(40);
   const [newTreatment, setNewTreatment] = useState({ procedure: '', tooth: '', notes: '', doctor: '', date: localDateStr() });
   const [showAddForm, setShowAddForm] = useState(false);
   const [lastAdded, setLastAdded] = useState('');
 
   const toggleCategory = (cat) => setOpenCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+
+  // --- Presupuesto persistido en la ficha, con vigencia de 48 horas ---
+  const presupuesto = patient.presupuesto || null;
+  const budgetItems = presupuesto?.items || [];
+  const exchangeRate = presupuesto?.tasa ?? 40;
+  const vencido = presupuestoVencido(presupuesto);
+  const catalogoPrecios = Object.fromEntries(PROCEDIMIENTOS.map(p => [p.id, { priceUSD: p.priceUSD }]));
+
+  // Crea, actualiza o borra el presupuesto. Renovar reinicia las 48 horas.
+  const guardarPresupuesto = (items, tasa, { renovar = false } = {}) => {
+    if (items.length === 0) {
+      const sinPresupuesto = { ...patient };
+      delete sinPresupuesto.presupuesto;
+      setPatients({ ...patients, [patientId]: sinPresupuesto });
+      return;
+    }
+    const nuevo = renovar || !presupuesto;
+    const creadoEn = nuevo ? new Date().toISOString() : presupuesto.creadoEn;
+    setPatients({
+      ...patients,
+      [patientId]: {
+        ...patient,
+        presupuesto: {
+          id: nuevo ? String(newId()) : presupuesto.id,
+          creadoEn,
+          vencimiento: calcularVencimiento(creadoEn),
+          tasa,
+          items,
+        },
+      },
+    });
+  };
+
+  const setBudgetItems = (u) => {
+    if (vencido) {
+      window.alert('El presupuesto venció. Renuévelo para modificarlo.');
+      return;
+    }
+    const siguiente = typeof u === 'function' ? u(budgetItems) : u;
+    guardarPresupuesto(siguiente, exchangeRate);
+  };
+  const setExchangeRate = (tasa) => {
+    if (vencido) {
+      window.alert('El presupuesto venció. Renuévelo para cambiar la tasa.');
+      return;
+    }
+    guardarPresupuesto(budgetItems, tasa);
+  };
+  const renovarPresupuesto = () => {
+    guardarPresupuesto(revalorarItems(budgetItems, catalogoPrecios), exchangeRate, { renovar: true });
+  };
+  const fechaVencimiento = presupuesto ? formatearFechaHora(presupuesto.vencimiento) : '';
 
   // --- Plan de tratamiento (dientes enviados desde el odontograma) ---
   const planItems = patient.planTratamientos || [];
@@ -32,6 +83,7 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
     if (!proc) return;
     addToBudget({
       id: idEnPresupuesto(item),
+      catalogId: proc.id,
       name: `${proc.name} · Diente ${item.tooth}`,
       unit: proc.unit,
       priceUSD: proc.priceUSD,
@@ -44,6 +96,10 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
   })).filter(cat => cat.items.length > 0);
 
   const addToBudget = (item) => {
+    if (vencido) {
+      window.alert('El presupuesto venció. Renuévelo antes de agregar procedimientos.');
+      return;
+    }
     setBudgetItems(prev => {
       const existing = prev.find(i => i.id === item.id);
       if (existing) return prev.map(i => i.id === item.id ? { ...i, qty: i.qty + 1 } : i);
@@ -300,20 +356,36 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
               </div>
             </div>
           ) : (
-            <BudgetWithPDF
-              patient={patient}
-              budgetItems={budgetItems}
-              setBudgetItems={setBudgetItems}
-              exchangeRate={exchangeRate}
-              setExchangeRate={setExchangeRate}
-              onAddMore={() => setActiveSection('catalog')}
-            />
+            <>
+              <div className={`bdg-vigencia ${vencido ? 'bdg-vigencia-vencido' : ''}`} role="status">
+                <span>
+                  {vencido
+                    ? `Presupuesto vencido el ${fechaVencimiento}. Renuévelo para modificarlo; los precios se actualizarán con el catálogo.`
+                    : `Presupuesto vigente hasta ${fechaVencimiento} (${VIGENCIA_HORAS} horas desde ${formatearFechaHora(presupuesto.creadoEn)}).`}
+                </span>
+                {vencido && (
+                  <button className="btn btn-primary btn-sm" onClick={renovarPresupuesto}>Renovar {VIGENCIA_HORAS} horas</button>
+                )}
+              </div>
+              <BudgetWithPDF
+                patient={patient}
+                budgetItems={budgetItems}
+                setBudgetItems={setBudgetItems}
+                exchangeRate={exchangeRate}
+                setExchangeRate={setExchangeRate}
+                onAddMore={() => setActiveSection('catalog')}
+                vigencia={`Vigencia: ${VIGENCIA_HORAS} horas. Válido hasta ${fechaVencimiento}.`}
+                vencido={vencido}
+              />
+            </>
           )}
         </div>
       )}
 
       <style>{`
         .treatments-layout { display: flex; flex-direction: column; gap: 1.5rem; }
+        .bdg-vigencia { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 0.875rem; }
+        .bdg-vigencia-vencido { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .plan-list { display: flex; flex-direction: column; gap: 0.75rem; }
         .plan-empty { color: var(--text-secondary); text-align: center; padding: 1.5rem 0; }
         .plan-item { border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.5rem; background: var(--bg-primary); }
