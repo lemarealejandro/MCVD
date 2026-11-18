@@ -72,8 +72,18 @@ export async function login(email, password) {
     return { success: false, error: `No se pudo cargar tu clínica: ${loadError.message}` };
   }
   if (!membership) {
+    const { data: request } = await supabase
+      .from('clinic_requests')
+      .select('status, clinic_name')
+      .maybeSingle();
     await supabase.auth.signOut();
     session = null;
+    if (request?.status === 'pending') {
+      return { success: false, error: `La solicitud de ${request.clinic_name} está pendiente de aprobación. Podrás entrar cuando sea aprobada.` };
+    }
+    if (request?.status === 'rejected') {
+      return { success: false, error: 'Tu solicitud de registro no fue aprobada. Contacta al administrador.' };
+    }
     return { success: false, error: 'Tu usuario no tiene una clínica asignada. Pide acceso al administrador.' };
   }
   // Sesión nueva: los coachmarks de las secciones vuelven a mostrarse.

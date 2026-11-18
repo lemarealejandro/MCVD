@@ -10,3 +10,19 @@ if (!supabaseUrl || !supabaseKey) {
 }
 
 export const supabase = createClient(supabaseUrl, supabaseKey);
+
+// Llama a una Edge Function pública de Supabase. Devuelve { data, error }.
+export async function callFunction(name, body) {
+  try {
+    const res = await fetch(`${supabaseUrl}/functions/v1/${name}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', apikey: supabaseKey },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) return { data, error: data.error || `Error ${res.status}` };
+    return { data, error: null };
+  } catch {
+    return { data: null, error: 'No hay conexión con el servidor. Revisa tu internet e inténtalo de nuevo.' };
+  }
+}

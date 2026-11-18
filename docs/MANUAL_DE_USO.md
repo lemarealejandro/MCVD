@@ -29,7 +29,7 @@
 ## 1. Antes de empezar
 
 - Se usa desde el navegador (Chrome, Edge, Safari o Firefox actualizados), en computadora o tablet. No hay que instalar nada.
-- Necesitas un **correo y contraseña** que te entrega el administrador de la clínica. No hay registro libre.
+- Necesitas un **correo y contraseña**. Si tu clínica es nueva, pulsa **Solicita acceso** en la pantalla de inicio de sesión: creas tu contraseña y entras cuando el administrador apruebe la solicitud. Si tu clínica ya existe, pide tu usuario al responsable.
 - Hay dos clínicas configuradas:
   - **Clínica MCVD:** la clínica real. Empieza vacía.
   - **Demo MCVD:** trae pacientes, citas e inventario de ejemplo para practicar. **No ingreses datos de pacientes reales aquí.**
@@ -51,6 +51,7 @@ Entrarás a la **Agenda** (o a la página que intentabas abrir).
 | Mensaje | Qué significa | Qué hacer |
 |---|---|---|
 | "Correo o contraseña incorrectos." | Algún dato no coincide | Revisa mayúsculas y que el correo esté bien escrito |
+| "…está pendiente de aprobación." | Registraste tu clínica y aún no la aprueban | Espera la aprobación |
 | "Tu usuario no tiene una clínica asignada." | Tu cuenta existe pero no está asignada a una clínica | Pide al administrador que te asigne (§13) |
 | "No se pudo iniciar sesión: …" | Problema de conexión u otro error | Revisa tu internet y vuelve a intentar |
 
@@ -296,6 +297,16 @@ Para eliminar la cuenta por completo: **Authentication → Users →** (persona)
 ### 13.6 Copias de seguridad
 
 Supabase guarda copias automáticas según el plan contratado (**Database → Backups**). Antes de cambios grandes, conviene exportar los datos (ver la documentación técnica, §12.6).
+
+### 13.7 Aprobar clínicas nuevas
+
+Una clínica nueva puede pedir acceso sola desde **Solicita acceso** en la pantalla de inicio de sesión. Te llega un correo a lemare.alejandro@gmail.com con el asunto **"Solicitud de alta: …"**.
+
+1. Pulsa **Revisar solicitud** en el correo.
+2. Revisa los datos (clínica, responsable, correo y teléfono).
+3. Pulsa **Aprobar clínica**, o **Rechazar** y confirma.
+
+Al aprobar se crea la clínica vacía y la persona ya puede entrar con su correo y la contraseña que eligió. No reenvíes el correo: el enlace permite aprobar la clínica.
 
 ---
 

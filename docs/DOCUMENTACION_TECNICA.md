@@ -568,6 +568,48 @@ Exportar el resultado a CSV/JSON desde el SQL Editor.
 
 ---
 
+### 12.8 Registro de clínicas nuevas (autoservicio con aprobación)
+
+Flujo:
+
+1. La persona entra a `/registro` (enlace "Solicita acceso" en el login) y escribe clínica, nombre, teléfono, correo y contraseña.
+2. La Edge Function **`clinic-signup`** (pública, `verify_jwt = false`):
+   - valida los datos (contraseña de 8 a 72 caracteres) y limita a 20 solicitudes por hora;
+   - crea el usuario en Supabase Auth con su contraseña (`email_confirm: true`, porque la aprobación manual reemplaza la confirmación de correo);
+   - guarda la fila en **`clinic_requests`** con `status = 'pending'` y el **sha256** de un código aleatorio de 64 caracteres;
+   - envía un correo a `ADMIN_EMAIL` (por defecto lemare.alejandro@gmail.com) con el enlace `APP_URL/aprobar-clinica?id=…&token=…`.
+3. El administrador abre el enlace. La página `/aprobar-clinica` llama a la Edge Function **`clinic-approval`** (`view`, `approve` o `reject`), que comprueba el código contra el hash (comparación en tiempo constante, vence a los 30 días).
+4. Al aprobar, la función SQL `public.approve_clinic_request(id)` crea la clínica (`demo_data = false`), asigna al usuario como `owner` y marca la solicitud `approved`, todo en una transacción.
+5. Desde ese momento la persona entra en `/login` con su correo y contraseña. Antes de la aprobación el login muestra "pendiente de aprobación".
+
+Tabla `clinic_requests`: `id`, `user_id` (único), `clinic_name`, `contact_name`, `phone`, `email`, `status` (`pending`/`approved`/`rejected`), `token_hash`, `token_expires_at`, `clinic_id`, `notified_at`, `created_at`, `reviewed_at`. RLS: el usuario solo lee su propia solicitud y nunca la columna `token_hash`; nadie escribe desde el navegador.
+
+Secretos de las Edge Functions (*Edge Functions → Secrets*):
+
+| Secreto | Obligatorio | Uso |
+|---|---|---|
+| `RESEND_API_KEY` | Sí, para el correo | Clave de [Resend](https://resend.com). Sin ella la solicitud se guarda pero no llega correo |
+| `APP_URL` | Recomendado | URL pública de la app (p. ej. `https://mcvd.vercel.app`) para el enlace de aprobación |
+| `ADMIN_EMAIL` | No | Destinatario de las solicitudes |
+| `RESEND_FROM` | No | Remitente con dominio verificado en Resend. Sin él se usa `onboarding@resend.dev`, que solo puede enviar al correo dueño de la cuenta de Resend, y no se avisa al solicitante |
+
+Código: `supabase/functions/clinic-signup/`, `supabase/functions/clinic-approval/`, `supabase/migrations/20261118170000_clinic_requests.sql`, `src/pages/Registro.jsx`, `src/pages/AprobarClinica.jsx`.
+
+Ver solicitudes pendientes sin correo:
+
+```sql
+select created_at, clinic_name, contact_name, email, phone, notified_at
+from public.clinic_requests where status = 'pending' order by created_at desc;
+```
+
+Aprobar a mano (SQL Editor):
+
+```sql
+select public.approve_clinic_request('<id de la solicitud>');
+```
+
+---
+
 ## 13. Herramientas para Claude Code
 
 - **`.mcp.json`**: registra el servidor MCP de Supabase (`https://mcp.supabase.com/mcp?project_ref=elsgbeupmvsqwkdiineb&…`). Permite a Claude Code consultar tablas, aplicar migraciones, revisar logs y advisors. En local requiere autenticarse una vez con `/mcp` → *supabase* → *Authenticate*. En sesiones de Claude Code en la nube se usa el conector de Supabase de claude.ai.
@@ -590,7 +632,7 @@ Exportar el resultado a CSV/JSON desde el SQL Editor.
 ### 14.2 Funcionalidad
 
 8. **Sin pantalla para fichas de pacientes recibidas** (se ven en Supabase, §12.5).
-9. **Sin "olvidé mi contraseña"** en la app ni gestión de usuarios desde la app.
+9. **Sin "olvidé mi contraseña"** en la app. Las clínicas nuevas se registran solas con aprobación (§12.8), pero agregar más personas a una clínica existente sigue siendo manual (§12.1).
 10. **Roles sin efecto:** `owner` y `staff` tienen los mismos permisos.
 11. **Un usuario = una clínica activa** (sin selector).
 12. **Link de pago simulado** (§9.4).
