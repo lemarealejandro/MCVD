@@ -54,6 +54,7 @@ export const isSetupAccount = () => Boolean(membership && !membership.demoData);
 
 export const getClinicId = () => membership?.clinicId ?? null;
 export const getClinicName = () => membership?.clinicName ?? '';
+export const getUserEmail = () => session?.user?.email ?? '';
 
 export async function login(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
