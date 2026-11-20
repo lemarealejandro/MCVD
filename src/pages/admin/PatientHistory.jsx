@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
-import { ArrowLeft, FileText, Calendar as CalendarIcon, Printer, Activity, User, PenTool, Mail, Send } from 'lucide-react';
+import { ArrowLeft, FileText, Calendar as CalendarIcon, Printer, Activity, User, PenTool, Mail, Send, Wallet } from 'lucide-react';
 import Odontogram from '../../components/clinical/Odontogram';
 import TreatmentsTab from '../../components/clinical/TreatmentsTab';
+import PaymentsTab, { EstadoCuentaAviso } from '../../components/clinical/PaymentsTab';
+import { estadoCuenta } from '../../utils/cuenta';
 import ClinicalHistoryEditor from '../../components/clinical/ClinicalHistoryEditor';
 import Periodontodiagrama from '../../components/clinical/Periodontodiagrama';
 import SignatureCanvas from '../../components/clinical/SignatureCanvas';
@@ -61,7 +63,11 @@ const PatientHistory = () => {
     { key: 'perio',       label: 'Periodontodiagrama',   icon: Activity },
     { key: 'treatments',  label: 'Tratamientos',         icon: CalendarIcon },
     { key: 'consent',     label: 'Consentimiento',       icon: PenTool },
+    { key: 'pagos',       label: 'Pagos',                icon: Wallet },
   ];
+
+  // Estado de pagos: se muestra en la cabecera y como punto de color en la pestaña.
+  const resumenCuenta = estadoCuenta(patient.cuenta);
 
   return (
     <div className="cms-page">
@@ -79,6 +85,11 @@ const PatientHistory = () => {
               {patient.bloodType && <span style={{ color: '#dc2626', fontWeight: 700 }}>{patient.bloodType}</span>}
               {patient.status && <span className={`ml-2 status-pill ${patient.status === 'Activo' ? 'pill-green' : 'pill-gray'}`}>{patient.status}</span>}
             </p>
+            {resumenCuenta.estado !== 'sin_cargos' && (
+              <button type="button" className="pay-status-link" onClick={() => setActiveTab('pagos')} title="Ver pagos">
+                <EstadoCuentaAviso resumen={resumenCuenta} compacto />
+              </button>
+            )}
           </div>
         </div>
         <div className="header-actions">
@@ -111,6 +122,9 @@ const PatientHistory = () => {
           >
             <Icon size={16} />
             <span className="tab-label">{label}</span>
+            {key === 'pagos' && (resumenCuenta.estado === 'atrasado' || resumenCuenta.estado === 'pendiente') && (
+              <span className={`tab-dot ${resumenCuenta.estado}`} aria-label={resumenCuenta.estado === 'atrasado' ? 'Pago atrasado' : 'Saldo pendiente'} />
+            )}
           </button>
         ))}
       </div>
@@ -166,6 +180,15 @@ const PatientHistory = () => {
           patientId={id}
           setPatients={setPatients}
           seccionInicial={treatmentsSection}
+        />
+      )}
+
+      {activeTab === 'pagos' && (
+        <PaymentsTab
+          patient={patient}
+          patients={patients}
+          patientId={id}
+          setPatients={setPatients}
         />
       )}
 
@@ -279,7 +302,12 @@ const PatientHistory = () => {
           .card-body { padding: 1rem; }
           .card-header { padding: 1rem; }
         }
-      `}</style>
+              .pay-status-link { border: 0; background: transparent; padding: 0; margin-top: 0.4rem; cursor: pointer; font: inherit; }
+        .tab-btn { position: relative; }
+        .tab-dot { width: 8px; height: 8px; border-radius: 999px; display: inline-block; margin-left: 0.2rem; }
+        .tab-dot.pendiente { background: #f59e0b; }
+        .tab-dot.atrasado { background: #dc2626; }
+`}</style>
     </div>
   );
 };

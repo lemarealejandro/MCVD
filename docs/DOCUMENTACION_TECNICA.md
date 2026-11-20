@@ -186,7 +186,7 @@ Colecciones que usa la app (valor de `collection`):
 
 | Colección | Contenido | Pantallas |
 |---|---|---|
-| `clinicplus_patients` | Objeto indexado por id de paciente: datos personales, historia clínica, odontograma, periodontograma, `treatments[]`, firmas (PNG en base64) | Pacientes, ficha, Dashboard, Reportes |
+| `clinicplus_patients` | Objeto indexado por id de paciente: datos personales, historia clínica, odontograma, periodontograma, `treatments[]`, `planTratamientos[]`, `presupuesto`, `cuenta` (cargos y pagos), firmas (PNG en base64) | Pacientes, ficha, Dashboard, Reportes |
 | `clinicplus_appointments` | Array de citas (`date` YYYY-MM-DD, `time`, `status`, `doctor`, `service`, `patient`, `patientEmail`) | Agenda, Dashboard, Reportes |
 | `clinicplus_inventory` | Array de artículos (`quantity`, `minStock`, `priceUsd`, categoría) | Inventario, Dashboard, Reportes |
 | `clinicplus_estudios` | Array de estudios de imagen | Imagenología |
@@ -390,6 +390,7 @@ Rutas en `src/App.jsx`. Las páginas se cargan de forma diferida (`lazy`).
 - **`AdminLayout`**: menú lateral, cierre de sesión, y estado compartido (pacientes, citas, inventario, estudios) que pasa a las páginas mediante el contexto de `Outlet`.
 - **`RecordsPage`** (`components/pro/`): lista con búsqueda, alta, edición, baja y exportación CSV, configurada por props (`storageKey`, `fields`, `columns`…). La usan Sucursales, Gastos, Laboratorio, Convenios y Liquidaciones.
 - **Clínicos** (`components/clinical/`): `Odontogram`, `Periodontodiagrama` (sondaje de 6 puntos, sangrado, supuración, recesión, movilidad), `ClinicalHistoryEditor`, `TreatmentsTab` + `BudgetWithPDF` (catálogo en `data/treatmentCatalog.js`, tasa USD/VES editable, PDF A4), `SignatureCanvas`.
+- **Pagos** (`components/clinical/PaymentsTab.jsx`, lógica en `utils/cuenta.js`): cuenta del paciente en `patient.cuenta = { cargos: [], pagos: [] }`, separada de `patient.presupuesto` (que vence y se renueva). Cargo: `{ id, fecha, vence, descripcion, montoUSD, presupuestoId? }`. Pago: `{ id, fecha, forma, moneda, montoUSD, montoBs?, tasa?, referencia, nota, registradoPor, registradoEn }`. `estadoCuenta()` aplica los pagos a los cargos más antiguos (FIFO) y devuelve totales, detalle por cargo y el estado `sin_cargos` / `al_dia` / `pendiente` / `atrasado` (hay cargo con `vence` pasado y saldo). Los montos se guardan en USD; los pagos en Bs guardan además el monto en Bs y la tasa.
 - **Coachmarks** (`components/layout/SectionCoachmark.jsx`, textos en `data/sectionHelp.js`): explicación breve la primera vez que se entra a cada sección en una sesión.
 
 ---

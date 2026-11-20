@@ -274,6 +274,10 @@ td code { white-space: nowrap; }
 <td><strong>Consentimiento</strong></td>
 <td>Consentimiento informado con <strong>firma digital</strong> del paciente en pantalla (con el dedo o lápiz en tablet, o con el mouse)</td>
 </tr>
+<tr>
+<td><strong>Pagos</strong></td>
+<td>Lo que debe, lo que ha pagado, la forma de pago y si está al día</td>
+</tr>
 </tbody></table></div>
 <h3 id="m-tratamientos-y-presupuesto">Tratamientos y presupuesto</h3>
 <ol>
@@ -287,6 +291,23 @@ td code { white-space: nowrap; }
 <li>Pulsa el botón de <strong>PDF</strong> para descargar el presupuesto en formato A4.</li>
 </ol>
 <p class="note warn"><strong>El presupuesto no se guarda:</strong> si sales de la ficha o recargas la página, se pierde. Descarga el PDF antes de salir.</p>
+<h3 id="m-pagos-del-paciente">Pagos del paciente</h3>
+<p>En la pestaña <strong>Pagos</strong> de cada ficha:</p>
+<ul>
+<li><strong>Aviso de estado</strong> arriba, también visible bajo el nombre del paciente en todas las pestañas:<ul>
+<li><strong>Al día</strong> (verde): no debe nada. Si pagó de más, muestra el saldo a favor.</li>
+<li><strong>Saldo pendiente</strong> (ámbar): debe dinero, pero nada está vencido. Indica el próximo vencimiento.</li>
+<li><strong>Pago atrasado</strong> (rojo): hay algo con la fecha límite vencida y sin pagar.</li>
+<li>La pestaña <strong>Pagos</strong> muestra un punto ámbar o rojo cuando hay deuda.</li>
+</ul>
+</li>
+<li><strong>Totales:</strong> total cargado, pagado y saldo pendiente.</li>
+<li><strong>Pasar el presupuesto a la cuenta:</strong> si el paciente tiene un presupuesto sin pasar, elige la <strong>fecha límite de pago</strong> (por defecto, 30 días) y pulsa <strong>Pasar a la cuenta</strong>. Cada procedimiento queda como un cargo. Un mismo presupuesto se pasa una sola vez; si lo renuevas, el renovado se puede pasar de nuevo.</li>
+<li><strong>Lo que debe:</strong> la lista de cargos con monto, cuánto se pagó, cuánto falta y su estado (<strong>Pagado</strong>, <strong>Abonado</strong>, <strong>Pendiente</strong> o <strong>Atrasado</strong>). Con <strong>Agregar cargo</strong> sumas algo que no estaba en el presupuesto (por ejemplo, una consulta).</li>
+<li><strong>Registrar pago:</strong> fecha, <strong>forma de pago</strong> (efectivo USD o Bs, transferencia, Pago Móvil, Zelle, tarjeta de débito o crédito, otro), monto, referencia y nota. Si el pago es en <strong>Bs</strong>, escribe el monto en bolívares y la <strong>tasa del día</strong>: el sistema calcula su valor en USD. Queda registrado quién lo anotó.</li>
+<li>Los pagos se descuentan <strong>de los cargos más antiguos primero</strong>.</li>
+<li>Para corregir un error, elimina el cargo o el pago con el ícono de papelera y confirma. El saldo se recalcula solo.</li>
+</ul>
 <h3 id="m-enviar-el-formulario-al-paciente">Enviar el formulario al paciente</h3>
 <p>En la cabecera de la ficha, pulsa <strong>Enviar Formulario</strong>. El paciente recibe un correo con un enlace para llenar su historia desde su celular (ver §7). El paciente debe tener email registrado.</p>
 <hr>
@@ -750,7 +771,7 @@ Probablemente estás en la clínica <strong>Demo MCVD</strong>, que tiene datos 
 </tr>
 </thead><tbody><tr>
 <td><code>clinicplus_patients</code></td>
-<td>Objeto indexado por id de paciente: datos personales, historia clínica, odontograma, periodontograma, <code>treatments[]</code>, firmas (PNG en base64)</td>
+<td>Objeto indexado por id de paciente: datos personales, historia clínica, odontograma, periodontograma, <code>treatments[]</code>, <code>planTratamientos[]</code>, <code>presupuesto</code>, <code>cuenta</code> (cargos y pagos), firmas (PNG en base64)</td>
 <td>Pacientes, ficha, Dashboard, Reportes</td>
 </tr>
 <tr>
@@ -1228,6 +1249,7 @@ Probablemente estás en la clínica <strong>Demo MCVD</strong>, que tiene datos 
 <li><strong><code>AdminLayout</code></strong>: menú lateral, cierre de sesión, y estado compartido (pacientes, citas, inventario, estudios) que pasa a las páginas mediante el contexto de <code>Outlet</code>.</li>
 <li><strong><code>RecordsPage</code></strong> (<code>components/pro/</code>): lista con búsqueda, alta, edición, baja y exportación CSV, configurada por props (<code>storageKey</code>, <code>fields</code>, <code>columns</code>…). La usan Sucursales, Gastos, Laboratorio, Convenios y Liquidaciones.</li>
 <li><strong>Clínicos</strong> (<code>components/clinical/</code>): <code>Odontogram</code>, <code>Periodontodiagrama</code> (sondaje de 6 puntos, sangrado, supuración, recesión, movilidad), <code>ClinicalHistoryEditor</code>, <code>TreatmentsTab</code> + <code>BudgetWithPDF</code> (catálogo en <code>data/treatmentCatalog.js</code>, tasa USD/VES editable, PDF A4), <code>SignatureCanvas</code>.</li>
+<li><strong>Pagos</strong> (<code>components/clinical/PaymentsTab.jsx</code>, lógica en <code>utils/cuenta.js</code>): cuenta del paciente en <code>patient.cuenta = { cargos: [], pagos: [] }</code>, separada de <code>patient.presupuesto</code> (que vence y se renueva). Cargo: <code>{ id, fecha, vence, descripcion, montoUSD, presupuestoId? }</code>. Pago: <code>{ id, fecha, forma, moneda, montoUSD, montoBs?, tasa?, referencia, nota, registradoPor, registradoEn }</code>. <code>estadoCuenta()</code> aplica los pagos a los cargos más antiguos (FIFO) y devuelve totales, detalle por cargo y el estado <code>sin_cargos</code> / <code>al_dia</code> / <code>pendiente</code> / <code>atrasado</code> (hay cargo con <code>vence</code> pasado y saldo). Los montos se guardan en USD; los pagos en Bs guardan además el monto en Bs y la tasa.</li>
 <li><strong>Coachmarks</strong> (<code>components/layout/SectionCoachmark.jsx</code>, textos en <code>data/sectionHelp.js</code>): explicación breve la primera vez que se entra a cada sección en una sesión.</li>
 </ul>
 <hr>
