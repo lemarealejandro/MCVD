@@ -5,13 +5,14 @@ import BudgetWithPDF from './BudgetWithPDF';
 import { localDateStr } from '../../utils/date';
 import { elegirProcedimiento, quitarDelPlan } from '../../utils/planTratamiento';
 import { calcularVencimiento, presupuestoVencido, formatearFechaHora, revalorarItems, VIGENCIA_HORAS } from '../../utils/presupuesto';
+import { DIAS_PLAZO_POR_DEFECTO, cargosDesdePresupuesto, cuentaVacia, hoyIso, quitarTratamiento, sumarDias, unidadesSinPasar } from '../../utils/cuenta';
 
 const newId = () => Date.now();
 
 // Catálogo aplanado para elegir el procedimiento de cada diente del plan.
 const PROCEDIMIENTOS = DENTAL_TREATMENTS.flatMap(cat => cat.items.map(item => ({ ...item, categoria: cat.category })));
 
-const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInicial = 'history' }) => {
+const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInicial = 'history', onIrAPagos }) => {
   const [activeSection, setActiveSection] = useState(seccionInicial); // 'history' | 'catalog' | 'plan' | 'budget'
   const [openCategories, setOpenCategories] = useState({});
   const [search, setSearch] = useState('');
@@ -132,7 +133,20 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
 
   const removeFromHistory = (treatmentId) => {
     if (!window.confirm('¿Eliminar este tratamiento del historial?')) return;
-    setPatients({ ...patients, [patientId]: { ...patient, treatments: patient.treatments.filter(t => t.id !== treatmentId) } });
+    // Si venía de Pagos, el procedimiento vuelve a quedar como no realizado.
+    setPatients({ ...patients, [patientId]: quitarTratamiento(patient, treatmentId) });
+  };
+
+  // --- Enlace con Pagos ---
+  const cuentaPaciente = patient.cuenta || cuentaVacia();
+  const sinPasarAPagos = unidadesSinPasar(presupuesto, cuentaPaciente);
+  const pasarAPagos = () => {
+    const nuevos = cargosDesdePresupuesto(presupuesto, cuentaPaciente, {
+      fecha: hoyIso(),
+      vence: sumarDias(hoyIso(), DIAS_PLAZO_POR_DEFECTO),
+      nuevoId: () => `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    });
+    setPatients({ ...patients, [patientId]: { ...patient, cuenta: { ...cuentaPaciente, cargos: [...cuentaPaciente.cargos, ...nuevos] } } });
   };
 
   return (
@@ -367,6 +381,19 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
                   <button className="btn btn-primary btn-sm" onClick={renovarPresupuesto}>Renovar {VIGENCIA_HORAS} horas</button>
                 )}
               </div>
+              <div className={`bdg-pagos ${sinPasarAPagos.length ? '' : 'listo'}`} role="status">
+                <span>
+                  {sinPasarAPagos.length
+                    ? `${sinPasarAPagos.length} procedimiento(s) de este presupuesto todavía no están en Pagos.`
+                    : 'Todo este presupuesto ya está en Pagos.'}
+                </span>
+                <span className="bdg-pagos-actions">
+                  {sinPasarAPagos.length > 0 && (
+                    <button className="btn btn-primary btn-sm" onClick={pasarAPagos}>Pasar a Pagos</button>
+                  )}
+                  {onIrAPagos && <button className="btn btn-secondary btn-sm" onClick={onIrAPagos}>Ver Pagos</button>}
+                </span>
+              </div>
               <BudgetWithPDF
                 patient={patient}
                 budgetItems={budgetItems}
@@ -385,6 +412,9 @@ const TreatmentsTab = ({ patient, patients, patientId, setPatients, seccionInici
       <style>{`
         .treatments-layout { display: flex; flex-direction: column; gap: 1.5rem; }
         .bdg-vigencia { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; font-size: 0.875rem; }
+        .bdg-pagos { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; padding: 0.75rem 1rem; border-radius: var(--radius-md); background: #fffbeb; border: 1px solid #fde68a; color: #92400e; font-size: 0.875rem; }
+        .bdg-pagos.listo { background: #f0fdf4; border-color: #bbf7d0; color: #166534; }
+        .bdg-pagos-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
         .bdg-vigencia-vencido { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
         .plan-list { display: flex; flex-direction: column; gap: 0.75rem; }
         .plan-empty { color: var(--text-secondary); text-align: center; padding: 1.5rem 0; }
