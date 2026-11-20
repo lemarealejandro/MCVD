@@ -162,19 +162,33 @@ En la lista, pulsa **Ver Historia** en la fila del paciente. La ficha tiene cinc
 
 ### Pagos del paciente
 
-En la pestaña **Pagos** de cada ficha:
+La pestaña **Pagos** une el presupuesto, lo que se ha hecho y lo que se ha pagado.
 
-- **Aviso de estado** arriba, también visible bajo el nombre del paciente en todas las pestañas:
-  - **Al día** (verde): no debe nada. Si pagó de más, muestra el saldo a favor.
-  - **Saldo pendiente** (ámbar): debe dinero, pero nada está vencido. Indica el próximo vencimiento.
-  - **Pago atrasado** (rojo): hay algo con la fecha límite vencida y sin pagar.
-  - La pestaña **Pagos** muestra un punto ámbar o rojo cuando hay deuda.
-- **Totales:** total cargado, pagado y saldo pendiente.
-- **Pasar el presupuesto a la cuenta:** si el paciente tiene un presupuesto sin pasar, elige la **fecha límite de pago** (por defecto, 30 días) y pulsa **Pasar a la cuenta**. Cada procedimiento queda como un cargo. Un mismo presupuesto se pasa una sola vez; si lo renuevas, el renovado se puede pasar de nuevo.
-- **Lo que debe:** la lista de cargos con monto, cuánto se pagó, cuánto falta y su estado (**Pagado**, **Abonado**, **Pendiente** o **Atrasado**). Con **Agregar cargo** sumas algo que no estaba en el presupuesto (por ejemplo, una consulta).
-- **Registrar pago:** fecha, **forma de pago** (efectivo USD o Bs, transferencia, Pago Móvil, Zelle, tarjeta de débito o crédito, otro), monto, referencia y nota. Si el pago es en **Bs**, escribe el monto en bolívares y la **tasa del día**: el sistema calcula su valor en USD. Queda registrado quién lo anotó.
-- Los pagos se descuentan **de los cargos más antiguos primero**.
-- Para corregir un error, elimina el cargo o el pago con el ícono de papelera y confirma. El saldo se recalcula solo.
+**1. Pasar el presupuesto a Pagos.** Hay dos formas:
+- En **Tratamientos → Presupuesto**, pulsa **Pasar a Pagos**. Se usa una fecha límite de pago de 30 días.
+- En **Pagos**, elige la **fecha límite de pago** y pulsa **Pasar a Pagos**.
+
+Cada unidad queda como una línea propia: "Resina compuesta × 2" se convierte en **Resina compuesta #1** y **#2**, porque pueden hacerse y pagarse en días distintos. Si después agregas procedimientos al presupuesto, solo se pasan los nuevos. El aviso en Tratamientos dice si falta algo por pasar.
+
+**2. Marcar lo realizado.** En la tabla **Procedimientos y pagos**, marca la casilla **Realizado** cuando se haga el procedimiento:
+- Se anota en el **historial de Tratamientos** con la fecha y quién lo marcó.
+- Si la desmarcas, se quita del historial. Si lo borras del historial, la casilla se desmarca sola.
+
+**3. Registrar pagos eligiendo qué se paga.**
+- Pulsa **Pagar** en la fila de un procedimiento, o **Registrar pago** arriba.
+- En **¿Qué está pagando?** marca uno o varios procedimientos: el monto se llena solo con lo que falta (en Bs, con la tasa del día). Puedes cambiarlo:
+  - **Menos** que lo seleccionado: es un **abono**; el procedimiento queda **Abonado**.
+  - **Más**: lo que sobra se aplica a lo más antiguo pendiente o queda **a favor**.
+  - **Sin elegir nada**: el pago se aplica a lo más antiguo.
+- Completa la **forma de pago** (efectivo USD o Bs, transferencia, Pago Móvil, Zelle, tarjeta de débito o crédito, otro), referencia y nota.
+
+**4. Ver el estado.**
+- Cada procedimiento muestra monto, pagado, lo que debe, su estado (**Pagado**, **Abonado**, **Pendiente**, **Atrasado**) y **con qué pagos se cubrió**.
+- En **Pagos recibidos**, cada pago dice qué procedimientos pagó.
+- El **aviso** de arriba (también bajo el nombre del paciente) indica **Al día**, **Saldo pendiente** o **Pago atrasado**, y avisa si hay procedimientos **realizados sin pagar**. La pestaña muestra un punto ámbar o rojo cuando hay deuda.
+- Los totales muestran cuánto hay en la cuenta, lo pagado, el saldo y cuántos procedimientos se han realizado.
+
+**Corregir:** elimina un procedimiento o un pago con la papelera y confirma. El saldo se recalcula. Si eliminas un procedimiento realizado, también se quita del historial.
 
 ### Enviar el formulario al paciente
 

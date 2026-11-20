@@ -180,6 +180,7 @@ const PatientHistory = () => {
           patientId={id}
           setPatients={setPatients}
           seccionInicial={treatmentsSection}
+          onIrAPagos={() => setActiveTab('pagos')}
         />
       )}
 

@@ -292,22 +292,37 @@ td code { white-space: nowrap; }
 </ol>
 <p class="note warn"><strong>El presupuesto no se guarda:</strong> si sales de la ficha o recargas la página, se pierde. Descarga el PDF antes de salir.</p>
 <h3 id="m-pagos-del-paciente">Pagos del paciente</h3>
-<p>En la pestaña <strong>Pagos</strong> de cada ficha:</p>
+<p>La pestaña <strong>Pagos</strong> une el presupuesto, lo que se ha hecho y lo que se ha pagado.</p>
+<p><strong>1. Pasar el presupuesto a Pagos.</strong> Hay dos formas:</p>
 <ul>
-<li><strong>Aviso de estado</strong> arriba, también visible bajo el nombre del paciente en todas las pestañas:<ul>
-<li><strong>Al día</strong> (verde): no debe nada. Si pagó de más, muestra el saldo a favor.</li>
-<li><strong>Saldo pendiente</strong> (ámbar): debe dinero, pero nada está vencido. Indica el próximo vencimiento.</li>
-<li><strong>Pago atrasado</strong> (rojo): hay algo con la fecha límite vencida y sin pagar.</li>
-<li>La pestaña <strong>Pagos</strong> muestra un punto ámbar o rojo cuando hay deuda.</li>
+<li>En <strong>Tratamientos → Presupuesto</strong>, pulsa <strong>Pasar a Pagos</strong>. Se usa una fecha límite de pago de 30 días.</li>
+<li>En <strong>Pagos</strong>, elige la <strong>fecha límite de pago</strong> y pulsa <strong>Pasar a Pagos</strong>.</li>
+</ul>
+<p>Cada unidad queda como una línea propia: &quot;Resina compuesta × 2&quot; se convierte en <strong>Resina compuesta #1</strong> y <strong>#2</strong>, porque pueden hacerse y pagarse en días distintos. Si después agregas procedimientos al presupuesto, solo se pasan los nuevos. El aviso en Tratamientos dice si falta algo por pasar.</p>
+<p><strong>2. Marcar lo realizado.</strong> En la tabla <strong>Procedimientos y pagos</strong>, marca la casilla <strong>Realizado</strong> cuando se haga el procedimiento:</p>
+<ul>
+<li>Se anota en el <strong>historial de Tratamientos</strong> con la fecha y quién lo marcó.</li>
+<li>Si la desmarcas, se quita del historial. Si lo borras del historial, la casilla se desmarca sola.</li>
+</ul>
+<p><strong>3. Registrar pagos eligiendo qué se paga.</strong></p>
+<ul>
+<li>Pulsa <strong>Pagar</strong> en la fila de un procedimiento, o <strong>Registrar pago</strong> arriba.</li>
+<li>En <strong>¿Qué está pagando?</strong> marca uno o varios procedimientos: el monto se llena solo con lo que falta (en Bs, con la tasa del día). Puedes cambiarlo:<ul>
+<li><strong>Menos</strong> que lo seleccionado: es un <strong>abono</strong>; el procedimiento queda <strong>Abonado</strong>.</li>
+<li><strong>Más</strong>: lo que sobra se aplica a lo más antiguo pendiente o queda <strong>a favor</strong>.</li>
+<li><strong>Sin elegir nada</strong>: el pago se aplica a lo más antiguo.</li>
 </ul>
 </li>
-<li><strong>Totales:</strong> total cargado, pagado y saldo pendiente.</li>
-<li><strong>Pasar el presupuesto a la cuenta:</strong> si el paciente tiene un presupuesto sin pasar, elige la <strong>fecha límite de pago</strong> (por defecto, 30 días) y pulsa <strong>Pasar a la cuenta</strong>. Cada procedimiento queda como un cargo. Un mismo presupuesto se pasa una sola vez; si lo renuevas, el renovado se puede pasar de nuevo.</li>
-<li><strong>Lo que debe:</strong> la lista de cargos con monto, cuánto se pagó, cuánto falta y su estado (<strong>Pagado</strong>, <strong>Abonado</strong>, <strong>Pendiente</strong> o <strong>Atrasado</strong>). Con <strong>Agregar cargo</strong> sumas algo que no estaba en el presupuesto (por ejemplo, una consulta).</li>
-<li><strong>Registrar pago:</strong> fecha, <strong>forma de pago</strong> (efectivo USD o Bs, transferencia, Pago Móvil, Zelle, tarjeta de débito o crédito, otro), monto, referencia y nota. Si el pago es en <strong>Bs</strong>, escribe el monto en bolívares y la <strong>tasa del día</strong>: el sistema calcula su valor en USD. Queda registrado quién lo anotó.</li>
-<li>Los pagos se descuentan <strong>de los cargos más antiguos primero</strong>.</li>
-<li>Para corregir un error, elimina el cargo o el pago con el ícono de papelera y confirma. El saldo se recalcula solo.</li>
+<li>Completa la <strong>forma de pago</strong> (efectivo USD o Bs, transferencia, Pago Móvil, Zelle, tarjeta de débito o crédito, otro), referencia y nota.</li>
 </ul>
+<p><strong>4. Ver el estado.</strong></p>
+<ul>
+<li>Cada procedimiento muestra monto, pagado, lo que debe, su estado (<strong>Pagado</strong>, <strong>Abonado</strong>, <strong>Pendiente</strong>, <strong>Atrasado</strong>) y <strong>con qué pagos se cubrió</strong>.</li>
+<li>En <strong>Pagos recibidos</strong>, cada pago dice qué procedimientos pagó.</li>
+<li>El <strong>aviso</strong> de arriba (también bajo el nombre del paciente) indica <strong>Al día</strong>, <strong>Saldo pendiente</strong> o <strong>Pago atrasado</strong>, y avisa si hay procedimientos <strong>realizados sin pagar</strong>. La pestaña muestra un punto ámbar o rojo cuando hay deuda.</li>
+<li>Los totales muestran cuánto hay en la cuenta, lo pagado, el saldo y cuántos procedimientos se han realizado.</li>
+</ul>
+<p><strong>Corregir:</strong> elimina un procedimiento o un pago con la papelera y confirma. El saldo se recalcula. Si eliminas un procedimiento realizado, también se quita del historial.</p>
 <h3 id="m-enviar-el-formulario-al-paciente">Enviar el formulario al paciente</h3>
 <p>En la cabecera de la ficha, pulsa <strong>Enviar Formulario</strong>. El paciente recibe un correo con un enlace para llenar su historia desde su celular (ver §7). El paciente debe tener email registrado.</p>
 <hr>
@@ -1249,7 +1264,14 @@ Probablemente estás en la clínica <strong>Demo MCVD</strong>, que tiene datos 
 <li><strong><code>AdminLayout</code></strong>: menú lateral, cierre de sesión, y estado compartido (pacientes, citas, inventario, estudios) que pasa a las páginas mediante el contexto de <code>Outlet</code>.</li>
 <li><strong><code>RecordsPage</code></strong> (<code>components/pro/</code>): lista con búsqueda, alta, edición, baja y exportación CSV, configurada por props (<code>storageKey</code>, <code>fields</code>, <code>columns</code>…). La usan Sucursales, Gastos, Laboratorio, Convenios y Liquidaciones.</li>
 <li><strong>Clínicos</strong> (<code>components/clinical/</code>): <code>Odontogram</code>, <code>Periodontodiagrama</code> (sondaje de 6 puntos, sangrado, supuración, recesión, movilidad), <code>ClinicalHistoryEditor</code>, <code>TreatmentsTab</code> + <code>BudgetWithPDF</code> (catálogo en <code>data/treatmentCatalog.js</code>, tasa USD/VES editable, PDF A4), <code>SignatureCanvas</code>.</li>
-<li><strong>Pagos</strong> (<code>components/clinical/PaymentsTab.jsx</code>, lógica en <code>utils/cuenta.js</code>): cuenta del paciente en <code>patient.cuenta = { cargos: [], pagos: [] }</code>, separada de <code>patient.presupuesto</code> (que vence y se renueva). Cargo: <code>{ id, fecha, vence, descripcion, montoUSD, presupuestoId? }</code>. Pago: <code>{ id, fecha, forma, moneda, montoUSD, montoBs?, tasa?, referencia, nota, registradoPor, registradoEn }</code>. <code>estadoCuenta()</code> aplica los pagos a los cargos más antiguos (FIFO) y devuelve totales, detalle por cargo y el estado <code>sin_cargos</code> / <code>al_dia</code> / <code>pendiente</code> / <code>atrasado</code> (hay cargo con <code>vence</code> pasado y saldo). Los montos se guardan en USD; los pagos en Bs guardan además el monto en Bs y la tasa.</li>
+<li><strong>Pagos</strong> (<code>components/clinical/PaymentsTab.jsx</code>, lógica pura en <code>utils/cuenta.js</code>): <code>patient.cuenta = { cargos: [], pagos: [] }</code>, separada de <code>patient.presupuesto</code> (que vence y se renueva).<ul>
+<li><strong>Cargo:</strong> <code>{ id, fecha, vence, descripcion, montoUSD, presupuestoId?, itemRef?, unidad?, realizado, realizadoEn?, tratamientoId? }</code>. <code>cargosDesdePresupuesto()</code> crea <strong>un cargo por unidad</strong> (<code>itemRef = presupuestoId:itemId</code>, <code>unidad</code> 1…qty, etiqueta &quot;#n&quot;) y solo para las unidades que faltan (<code>unidadesSinPasar()</code>), así que se puede volver a pasar un presupuesto ampliado sin duplicar.</li>
+<li><strong>Pago:</strong> <code>{ id, fecha, forma, moneda, montoUSD, montoBs?, tasa?, aplicaciones: [{ cargoId, montoUSD }], referencia, nota, registradoPor, registradoEn }</code>. <code>asignarPago()</code> reparte el monto entre los cargos elegidos (del más antiguo al más nuevo).</li>
+<li><strong><code>estadoCuenta()</code>:</strong> aplica primero las <code>aplicaciones</code> de cada pago y luego el sobrante (y los pagos sin aplicaciones) a los cargos más antiguos. Devuelve por cargo <code>pagado</code>, <code>pendiente</code>, <code>estado</code>, <code>vencido</code> y <code>cubiertoPor</code> (pagos que lo cubren), y en total <code>saldo</code>, <code>saldoAFavor</code>, <code>montoAtrasado</code>, <code>realizados</code>, <code>realizadosSinPagar</code> y el estado <code>sin_cargos</code> / <code>al_dia</code> / <code>pendiente</code> / <code>atrasado</code>.</li>
+<li><strong>Realizado ↔ historial:</strong> <code>marcarRealizado()</code> agrega o quita la entrada en <code>patient.treatments</code> (con <code>cargoId</code>) y guarda <code>tratamientoId</code> en el cargo; <code>quitarTratamiento()</code> (usado al borrar desde el historial) desmarca el cargo enlazado.</li>
+<li><strong>Tratamientos:</strong> el presupuesto muestra si hay unidades sin pasar y el botón <strong>Pasar a Pagos</strong> (vencimiento a 30 días).</li>
+</ul>
+</li>
 <li><strong>Coachmarks</strong> (<code>components/layout/SectionCoachmark.jsx</code>, textos en <code>data/sectionHelp.js</code>): explicación breve la primera vez que se entra a cada sección en una sesión.</li>
 </ul>
 <hr>
